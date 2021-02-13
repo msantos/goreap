@@ -111,11 +111,8 @@ func (state *stateT) prockill(children string) error {
 		return err
 	}
 
-	pids := strings.Split(string(b), " ")
+	pids := strings.Fields(string(b))
 	for _, s := range pids {
-		if s == "" {
-			continue
-		}
 		pid, err := strconv.Atoi(s)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
