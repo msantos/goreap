@@ -132,41 +132,33 @@ func (state *stateT) reap() error {
 		useProc = false
 	}
 
-	waitOpt := syscall.WNOHANG
-	if state.wait {
-		waitOpt = 0
+	if !state.wait {
+		go func() {
+			for {
+				if !useProc {
+					if err := state.pskill(self); err != nil {
+						fmt.Fprintln(os.Stderr, err)
+					}
+					continue
+				}
+				if err := state.prockill(children); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+				}
+			}
+		}()
 	}
 
 	for {
-	waitpid:
-		for {
-			pid, err := syscall.Wait4(-1, nil, waitOpt, nil)
-			switch {
-			case pid == 0:
-				// no subprocess has exited
-				break waitpid
-			case err == nil:
-			case errors.Is(err, syscall.EINTR):
-				continue
-			case errors.Is(err, syscall.ECHILD):
-				return nil
-			default:
-				return err
-			}
-		}
-
-		if state.wait {
+		pid, err := syscall.Wait4(-1, nil, 0, nil)
+		switch {
+		case pid == 0:
 			continue
-		}
-
-		if !useProc {
-			if err := state.pskill(self); err != nil {
-				return err
-			}
+		case err == nil:
+		case errors.Is(err, syscall.EINTR):
 			continue
-		}
-
-		if err := state.prockill(children); err != nil {
+		case errors.Is(err, syscall.ECHILD):
+			return nil
+		default:
 			return err
 		}
 	}
