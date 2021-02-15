@@ -61,3 +61,30 @@ func Processes() (p []Process, err error) {
 	}
 	return p, err
 }
+
+func Children(pids []Process, pid int) (cld []Process) {
+	for _, p := range pids {
+		if p.PPid != pid {
+			continue
+		}
+		cld = append(cld, p)
+	}
+	return cld
+}
+
+func Descendents(pids []Process, pid int) (cld []Process) {
+	seen := make(map[int]struct{})
+	return walk(pids, pid, seen, cld)
+}
+
+func walk(pids []Process, pid int, seen map[int]struct{}, cld []Process) []Process {
+	for _, p := range Children(pids, pid) {
+		if _, ok := seen[p.Pid]; ok {
+			continue
+		}
+		seen[p.Pid] = struct{}{}
+		cld = append(cld, p)
+		cld = walk(pids, p.Pid, seen, cld)
+	}
+	return cld
+}

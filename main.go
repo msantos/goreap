@@ -17,7 +17,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.2.1"
+var version = "0.3.0"
 
 type stateT struct {
 	argv          []string
@@ -95,10 +95,7 @@ func (state *stateT) pskill(self int) error {
 		return err
 	}
 
-	for _, p := range pids {
-		if p.PPid != self {
-			continue
-		}
+	for _, p := range ps.Descendents(pids, self) {
 		state.kill(p.Pid)
 	}
 
