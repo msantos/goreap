@@ -4,16 +4,69 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
+
+	"golang.org/x/sys/unix"
 )
+
+const Procfs = "/proc"
+
+type Ps struct {
+	procfs             string
+}
+
+type Option func(*Ps)
 
 type Process struct {
 	Pid  int
 	PPid int
 }
 
-var errParseFailProcStat = errors.New("unable to parse stat")
+var (
+	ErrProcNotMounted    = errors.New("procfs not mounted")
+	ErrParseFailProcStat = errors.New("unable to parse stat")
+)
+
+func getenv(s, def string) string {
+	v := os.Getenv(s)
+	if v == "" {
+		return def
+	}
+	return v
+}
+
+func New() (*Ps, error) {
+	procfs := getenv("PROC", Procfs)
+
+	ps := &Ps{
+		procfs: procfs,
+	}
+
+	if err := ps.procMounted(); err != nil {
+		return nil, fmt.Errorf("%s: %w", procfs, err)
+	}
+
+	return ps, nil
+}
+
+func (ps *Ps) Procfs() string {
+	return ps.procfs
+}
+
+func (ps *Ps) procMounted() error {
+	var buf syscall.Statfs_t
+	if err := syscall.Statfs(ps.procfs, &buf); err != nil {
+		return err
+	}
+	if buf.Type != unix.PROC_SUPER_MAGIC {
+		return ErrProcNotMounted
+	}
+
+	return nil
+}
 
 func parseStat(name string) (pid, ppid int, err error) {
 	b, err := ioutil.ReadFile(name)
@@ -32,17 +85,17 @@ func parseStat(name string) (pid, ppid int, err error) {
 	stat := string(b)
 
 	if n, err := fmt.Sscanf(stat, "%d ", &pid); err != nil || n != 1 {
-		return 0, 0, errParseFailProcStat
+		return 0, 0, ErrParseFailProcStat
 	}
 
 	bracket := strings.LastIndexByte(stat, ')')
 	if bracket == -1 {
-		return 0, 0, errParseFailProcStat
+		return 0, 0, ErrParseFailProcStat
 	}
 
 	var state byte
 	if n, err := fmt.Sscanf(stat[bracket+1:], " %c %d", &state, &ppid); err != nil || n != 2 {
-		return 0, 0, errParseFailProcStat
+		return 0, 0, ErrParseFailProcStat
 	}
 	return pid, ppid, nil
 }

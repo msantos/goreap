@@ -25,6 +25,7 @@ type stateT struct {
 	disableSetuid bool
 	wait          bool
 	verbose       bool
+	ps            *ps.Ps
 }
 
 func args() *stateT {
@@ -51,12 +52,19 @@ Options:
 		os.Exit(1)
 	}
 
+	procs, err := ps.New()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(111)
+	}
+
 	return &stateT{
 		argv:          flag.Args(),
 		signal:        syscall.Signal(*signal),
 		disableSetuid: *disableSetuid,
 		wait:          *wait,
 		verbose:       *verbose,
+		ps:            procs,
 	}
 }
 
@@ -123,7 +131,12 @@ func (state *stateT) prockill(children string) error {
 
 func (state *stateT) reap() error {
 	self := os.Getpid()
-	children := fmt.Sprintf("/proc/%d/task/%d/children", self, self)
+	children := fmt.Sprintf(
+		"%s/%d/task/%d/children",
+		state.ps.Procfs(),
+		self,
+		self,
+	)
 	useProc := true
 	if _, err := os.Stat(children); err != nil {
 		useProc = false
