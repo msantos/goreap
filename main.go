@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"goreap/ps"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -111,7 +110,7 @@ func (state *stateT) pskill(self int) error {
 }
 
 func (state *stateT) prockill(children string) error {
-	b, err := ioutil.ReadFile(children)
+	b, err := os.ReadFile(children)
 	if err != nil {
 		return err
 	}
@@ -162,10 +161,8 @@ func (state *stateT) reap() error {
 		pid, err := syscall.Wait4(-1, nil, 0, nil)
 		switch {
 		case pid == 0:
-			continue
 		case err == nil:
 		case errors.Is(err, syscall.EINTR):
-			continue
 		case errors.Is(err, syscall.ECHILD):
 			return nil
 		default:

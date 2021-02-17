@@ -3,7 +3,6 @@ package ps
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +14,7 @@ import (
 const Procfs = "/proc"
 
 type Ps struct {
-	procfs             string
+	procfs string
 }
 
 type Option func(*Ps)
@@ -69,7 +68,7 @@ func (ps *Ps) procMounted() error {
 }
 
 func parseStat(name string) (pid, ppid int, err error) {
-	b, err := ioutil.ReadFile(name)
+	b, err := os.ReadFile(name)
 	if err != nil {
 		return 0, 0, err
 	}
