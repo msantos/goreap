@@ -128,7 +128,7 @@ func (state *stateT) prockill(children string) error {
 	return nil
 }
 
-func (state *stateT) reap() error {
+func (state *stateT) signalLoop() {
 	self := os.Getpid()
 	children := fmt.Sprintf(
 		"%s/%d/task/%d/children",
@@ -141,20 +141,22 @@ func (state *stateT) reap() error {
 		useProc = false
 	}
 
-	if !state.wait {
-		go func() {
-			for {
-				if !useProc {
-					if err := state.pskill(self); err != nil {
-						fmt.Fprintln(os.Stderr, err)
-					}
-					continue
-				}
-				if err := state.prockill(children); err != nil {
-					fmt.Fprintln(os.Stderr, err)
-				}
+	for {
+		if !useProc {
+			if err := state.pskill(self); err != nil {
+				fmt.Fprintln(os.Stderr, err)
 			}
-		}()
+			continue
+		}
+		if err := state.prockill(children); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}
+}
+
+func (state *stateT) reap() error {
+	if !state.wait {
+		go state.signalLoop()
 	}
 
 	for {
