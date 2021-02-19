@@ -14,7 +14,10 @@ import (
 const Procfs = "/proc"
 
 type Ps struct {
-	procfs string
+	Pid                   int
+	HasConfigProcChildren bool
+	ProcChildren          string
+	procfs                string
 }
 
 type Option func(*Ps)
@@ -47,6 +50,17 @@ func New() (*Ps, error) {
 	if err := ps.procMounted(); err != nil {
 		return nil, fmt.Errorf("%s: %w", procfs, err)
 	}
+
+	pid := os.Getpid()
+	hasConfigProcChildren := true
+	procChildren, err := procChildrenPath(pid, procfs)
+	if err != nil {
+		hasConfigProcChildren = false
+	}
+
+	ps.Pid = pid
+	ps.ProcChildren = procChildren
+	ps.HasConfigProcChildren = hasConfigProcChildren
 
 	return ps, nil
 }
@@ -139,4 +153,19 @@ func walk(pids []Process, pid int, seen map[int]struct{}, cld []Process) []Proce
 		cld = walk(pids, p.Pid, seen, cld)
 	}
 	return cld
+}
+
+func procChildrenPath(pid int, procfs string) (string, error) {
+	children := fmt.Sprintf(
+		"%s/%d/task/%d/children",
+		procfs,
+		pid,
+		pid,
+	)
+	_, err := os.Stat(children)
+	return children, err
+}
+
+func (ps *Ps) ProcChildrenPath(pid int) (string, error) {
+	return procChildrenPath(pid, ps.procfs)
 }

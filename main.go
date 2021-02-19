@@ -20,7 +20,7 @@ var version = "0.3.0"
 
 type stateT struct {
 	argv          []string
-	signal        syscall.Signal
+	sig           syscall.Signal
 	disableSetuid bool
 	wait          bool
 	verbose       bool
@@ -37,7 +37,7 @@ Options:
 		flag.PrintDefaults()
 	}
 
-	signal := flag.Int("signal", int(syscall.SIGTERM),
+	sig := flag.Int("signal", int(syscall.SIGTERM),
 		"signal sent to supervised processes")
 	disableSetuid := flag.Bool("disable-setuid", false,
 		"disallow setuid (unkillable) subprocesses")
@@ -59,7 +59,7 @@ Options:
 
 	return &stateT{
 		argv:          flag.Args(),
-		signal:        syscall.Signal(*signal),
+		sig:           syscall.Signal(*sig),
 		disableSetuid: *disableSetuid,
 		wait:          *wait,
 		verbose:       *verbose,
@@ -87,7 +87,7 @@ func main() {
 }
 
 func (state *stateT) kill(pid int) {
-	err := syscall.Kill(pid, state.signal)
+	err := syscall.Kill(pid, state.sig)
 	switch {
 	case err == nil:
 	case errors.Is(err, syscall.ESRCH):
@@ -96,21 +96,21 @@ func (state *stateT) kill(pid int) {
 	}
 }
 
-func (state *stateT) pskill(self int) error {
+func (state *stateT) pskill() error {
 	pids, err := ps.Processes()
 	if err != nil {
 		return err
 	}
 
-	for _, p := range ps.Descendents(pids, self) {
+	for _, p := range ps.Descendents(pids, state.ps.Pid) {
 		state.kill(p.Pid)
 	}
 
 	return nil
 }
 
-func (state *stateT) prockill(children string) error {
-	b, err := os.ReadFile(children)
+func (state *stateT) prockill() error {
+	b, err := os.ReadFile(state.ps.ProcChildren)
 	if err != nil {
 		return err
 	}
@@ -128,35 +128,26 @@ func (state *stateT) prockill(children string) error {
 	return nil
 }
 
-func (state *stateT) signalLoop() {
-	self := os.Getpid()
-	children := fmt.Sprintf(
-		"%s/%d/task/%d/children",
-		state.ps.Procfs(),
-		self,
-		self,
-	)
-	useProc := true
-	if _, err := os.Stat(children); err != nil {
-		useProc = false
-	}
-
-	for {
-		if !useProc {
-			if err := state.pskill(self); err != nil {
-				fmt.Fprintln(os.Stderr, err)
-			}
-			continue
-		}
-		if err := state.prockill(children); err != nil {
+func (state *stateT) signal() {
+	if state.ps.HasConfigProcChildren {
+		if err := state.prockill(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
+		return
+	}
+
+	if err := state.pskill(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
 func (state *stateT) reap() error {
 	if !state.wait {
-		go state.signalLoop()
+		go func() {
+			for {
+				state.signal()
+			}
+		}()
 	}
 
 	for {
