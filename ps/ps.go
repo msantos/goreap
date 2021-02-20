@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -168,4 +169,27 @@ func procChildrenPath(pid int, procfs string) (string, error) {
 
 func (ps *Ps) ProcChildrenPath(pid int) (string, error) {
 	return procChildrenPath(pid, ps.procfs)
+}
+
+func (ps *Ps) ReadProcChildrenPath(path string) ([]int, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	pids := strings.Fields(string(b))
+	children := make([]int, len(pids))
+	for i, s := range pids {
+		pid, err := strconv.Atoi(s)
+		if err != nil {
+			return nil, err
+		}
+		children[i] = pid
+	}
+
+	return children, nil
+}
+
+func (ps *Ps) ReadProcChildren() ([]int, error) {
+	return ps.ReadProcChildrenPath(ps.ProcChildren)
 }

@@ -9,8 +9,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
-	"strconv"
-	"strings"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -110,18 +108,12 @@ func (state *stateT) pskill() error {
 }
 
 func (state *stateT) prockill() error {
-	b, err := os.ReadFile(state.ps.ProcChildren)
+	pids, err := state.ps.ReadProcChildren()
 	if err != nil {
 		return err
 	}
 
-	pids := strings.Fields(string(b))
-	for _, s := range pids {
-		pid, err := strconv.Atoi(s)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			continue
-		}
+	for _, pid := range pids {
 		state.kill(pid)
 	}
 
