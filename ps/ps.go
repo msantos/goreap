@@ -139,9 +139,15 @@ func Children(pids []Process, pid int) (cld []Process) {
 	return cld
 }
 
-func Descendents(pids []Process, pid int) (cld []Process) {
+func Descendents(pids []Process, pid int) []int {
 	seen := make(map[int]struct{})
-	return walk(pids, pid, seen, cld)
+	cld := make([]Process, 0)
+	cld = walk(pids, pid, seen, cld)
+	children := make([]int, len(cld))
+	for i, p := range cld {
+		children[i] = p.Pid
+	}
+	return children
 }
 
 func walk(pids []Process, pid int, seen map[int]struct{}, cld []Process) []Process {

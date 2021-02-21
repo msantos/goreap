@@ -101,7 +101,7 @@ func (state *stateT) pskill() error {
 	}
 
 	for _, p := range ps.Descendents(pids, state.ps.Pid) {
-		state.kill(p.Pid)
+		state.kill(p)
 	}
 
 	return nil
