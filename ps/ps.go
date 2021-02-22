@@ -129,6 +129,25 @@ func Processes() (p []Process, err error) {
 	return p, err
 }
 
+func (ps *Ps) Children() ([]int, error) {
+	if ps.HasConfigProcChildren {
+		return ps.ReadProcChildren()
+	}
+	return ps.ReadProcList()
+}
+
+func (ps *Ps) ReadProcListPid(pid int) ([]int, error) {
+	p, err := Processes()
+	if err != nil {
+		return nil, err
+	}
+	return Descendents(p, pid), nil
+}
+
+func (ps *Ps) ReadProcList() ([]int, error) {
+	return ps.ReadProcListPid(ps.Pid)
+}
+
 func Children(pids []Process, pid int) (cld []Process) {
 	for _, p := range pids {
 		if p.PPid != pid {

@@ -94,43 +94,18 @@ func (state *stateT) kill(pid int) {
 	}
 }
 
-func (state *stateT) pskill() error {
-	pids, err := ps.Processes()
+func (state *stateT) signal() {
+	pids, err := state.ps.Children()
 	if err != nil {
-		return err
-	}
-
-	for _, p := range ps.Descendents(pids, state.ps.Pid) {
-		state.kill(p)
-	}
-
-	return nil
-}
-
-func (state *stateT) prockill() error {
-	pids, err := state.ps.ReadProcChildren()
-	if err != nil {
-		return err
+		fmt.Fprintln(os.Stderr, err)
+		return
 	}
 
 	for _, pid := range pids {
 		state.kill(pid)
 	}
 
-	return nil
-}
-
-func (state *stateT) signal() {
-	if state.ps.HasConfigProcChildren {
-		if err := state.prockill(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-		return
-	}
-
-	if err := state.pskill(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
+	return
 }
 
 func (state *stateT) reap() error {
