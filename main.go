@@ -77,15 +77,15 @@ func main() {
 		fmt.Fprintf(os.Stderr, "prctl(PR_SET_CHILD_SUBREAPER): %s\n", err)
 		os.Exit(111)
 	}
-	exitStatus := execv(state.argv[0], state.argv[1:], os.Environ())
+	exitStatus := state.execv(state.argv[0], state.argv[1:], os.Environ())
 	if err := state.reap(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
 	os.Exit(exitStatus)
 }
 
-func (state *stateT) kill(pid int) {
-	err := syscall.Kill(pid, state.sig)
+func kill(pid int, sig syscall.Signal) {
+	err := syscall.Kill(pid, sig)
 	switch {
 	case err == nil:
 	case errors.Is(err, syscall.ESRCH):
@@ -95,6 +95,10 @@ func (state *stateT) kill(pid int) {
 }
 
 func (state *stateT) signal() {
+	state.signalWith(state.sig)
+}
+
+func (state *stateT) signalWith(sig syscall.Signal) {
 	pids, err := state.ps.Children()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -102,10 +106,8 @@ func (state *stateT) signal() {
 	}
 
 	for _, pid := range pids {
-		state.kill(pid)
+		kill(pid, sig)
 	}
-
-	return
 }
 
 func (state *stateT) reap() error {
@@ -131,7 +133,7 @@ func (state *stateT) reap() error {
 	}
 }
 
-func execv(command string, args []string, env []string) int {
+func (state *stateT) execv(command string, args []string, env []string) int {
 	cmd := exec.Command(command, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -157,7 +159,7 @@ func execv(command string, args []string, env []string) int {
 	for {
 		select {
 		case sig := <-sigChan:
-			_ = cmd.Process.Signal(sig)
+			state.signalWith(sig.(syscall.Signal))
 		case err := <-waitCh:
 			var waitStatus syscall.WaitStatus
 			var exitError *exec.ExitError
