@@ -48,7 +48,7 @@ func New() (*Ps, error) {
 		procfs: procfs,
 	}
 
-	if err := ps.procMounted(); err != nil {
+	if err := procMounted(procfs); err != nil {
 		return nil, fmt.Errorf("%s: %w", procfs, err)
 	}
 
@@ -70,9 +70,9 @@ func (ps *Ps) Procfs() string {
 	return ps.procfs
 }
 
-func (ps *Ps) procMounted() error {
+func procMounted(procfs string) error {
 	var buf syscall.Statfs_t
-	if err := syscall.Statfs(ps.procfs, &buf); err != nil {
+	if err := syscall.Statfs(procfs, &buf); err != nil {
 		return err
 	}
 	if buf.Type != unix.PROC_SUPER_MAGIC {
