@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"goreap/ps"
+	"goreap/process"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -22,7 +22,7 @@ type stateT struct {
 	disableSetuid bool
 	wait          bool
 	verbose       bool
-	ps            *ps.Ps
+	ps            *process.Ps
 }
 
 func args() *stateT {
@@ -49,7 +49,7 @@ Options:
 		os.Exit(1)
 	}
 
-	procs, err := ps.New()
+	ps, err := process.New()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(111)
@@ -61,7 +61,7 @@ Options:
 		disableSetuid: *disableSetuid,
 		wait:          *wait,
 		verbose:       *verbose,
-		ps:            procs,
+		ps:            ps,
 	}
 }
 
