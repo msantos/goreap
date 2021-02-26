@@ -15,10 +15,9 @@ import (
 const Procfs = "/proc"
 
 type Ps struct {
-	Pid                   int
-	HasConfigProcChildren bool
-	ProcChildren          string
-	procfs                string
+	Pid          int
+	ProcChildren string
+	procfs       string
 }
 
 type Option func(*Ps)
@@ -42,26 +41,16 @@ func getenv(s, def string) string {
 }
 
 func New() (*Ps, error) {
-	procfs := getenv("PROC", Procfs)
-
 	ps := &Ps{
-		procfs: procfs,
+		procfs: getenv("PROC", Procfs),
 	}
 
-	if err := procMounted(procfs); err != nil {
-		return nil, fmt.Errorf("%s: %w", procfs, err)
+	if err := procMounted(ps.procfs); err != nil {
+		return nil, fmt.Errorf("%s: %w", ps.procfs, err)
 	}
 
-	pid := os.Getpid()
-	hasConfigProcChildren := true
-	procChildren, err := procChildrenPath(pid, procfs)
-	if err != nil {
-		hasConfigProcChildren = false
-	}
-
-	ps.Pid = pid
-	ps.ProcChildren = procChildren
-	ps.HasConfigProcChildren = hasConfigProcChildren
+	ps.Pid = os.Getpid()
+	ps.ProcChildren, _ = procChildrenPath(ps.Pid, ps.procfs)
 
 	return ps, nil
 }
@@ -130,7 +119,7 @@ func Processes() (p []Process, err error) {
 }
 
 func (ps *Ps) Children() ([]int, error) {
-	if ps.HasConfigProcChildren {
+	if ps.ProcChildren != "" {
 		return ps.ReadProcChildren()
 	}
 	return ps.ReadProcList()
@@ -189,7 +178,10 @@ func procChildrenPath(pid int, procfs string) (string, error) {
 		pid,
 	)
 	_, err := os.Stat(children)
-	return children, err
+	if err != nil {
+		return "", err
+	}
+	return children, nil
 }
 
 func (ps *Ps) ProcChildrenPath(pid int) (string, error) {
