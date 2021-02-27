@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.3.0"
+var version = "0.4.0"
 
 type stateT struct {
 	argv          []string
