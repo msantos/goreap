@@ -103,8 +103,10 @@ func parseStat(name string) (pid, ppid int, err error) {
 	return pid, ppid, nil
 }
 
-func Processes() (p []Process, err error) {
-	matches, err := filepath.Glob("/proc/[0-9]*/stat")
+func Processes(procfs string) (p []Process, err error) {
+	matches, err := filepath.Glob(
+		fmt.Sprintf("%s/[0-9]*/stat", procfs),
+	)
 	if err != nil {
 		return p, err
 	}
@@ -118,6 +120,10 @@ func Processes() (p []Process, err error) {
 	return p, err
 }
 
+func (ps *Ps) Processes() (p []Process, err error) {
+	return Processes(ps.procfs)
+}
+
 func (ps *Ps) Children() ([]int, error) {
 	if ps.ProcChildren != "" {
 		return ps.ReadProcChildren()
@@ -126,7 +132,7 @@ func (ps *Ps) Children() ([]int, error) {
 }
 
 func (ps *Ps) ReadProcListPid(pid int) ([]int, error) {
-	p, err := Processes()
+	p, err := ps.Processes()
 	if err != nil {
 		return nil, err
 	}
