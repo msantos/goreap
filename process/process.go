@@ -20,8 +20,6 @@ type Ps struct {
 	procfs       string
 }
 
-type Option func(*Ps)
-
 type Process struct {
 	Pid  int
 	PPid int
@@ -41,18 +39,20 @@ func getenv(s, def string) string {
 }
 
 func New() (*Ps, error) {
-	ps := &Ps{
-		procfs: getenv("PROC", Procfs),
+	procfs := getenv("PROC", Procfs)
+
+	if err := procMounted(procfs); err != nil {
+		return nil, fmt.Errorf("%s: %w", procfs, err)
 	}
 
-	if err := procMounted(ps.procfs); err != nil {
-		return nil, fmt.Errorf("%s: %w", ps.procfs, err)
-	}
+	pid := os.Getpid()
+	procChildren, _ := procChildrenPath(pid, procfs)
 
-	ps.Pid = os.Getpid()
-	ps.ProcChildren, _ = procChildrenPath(ps.Pid, ps.procfs)
-
-	return ps, nil
+	return &Ps{
+		Pid:          pid,
+		procfs:       procfs,
+		ProcChildren: procChildren,
+	}, nil
 }
 
 func (ps *Ps) Procfs() string {
