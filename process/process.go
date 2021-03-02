@@ -39,7 +39,11 @@ func getenv(s, def string) string {
 }
 
 func New() (*Ps, error) {
-	procfs := getenv("PROC", Procfs)
+	v := getenv("PROC", Procfs)
+	procfs, err := filepath.Abs(v)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", v, err)
+	}
 
 	if err := procMounted(procfs); err != nil {
 		return nil, fmt.Errorf("%s: %w", procfs, err)
