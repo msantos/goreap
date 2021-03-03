@@ -45,7 +45,7 @@ func New() (*Ps, error) {
 		return nil, fmt.Errorf("%s: %w", v, err)
 	}
 
-	if err := procMounted(procfs); err != nil {
+	if err := isProcMounted(procfs); err != nil {
 		return nil, fmt.Errorf("%s: %w", procfs, err)
 	}
 
@@ -59,11 +59,11 @@ func New() (*Ps, error) {
 	}, nil
 }
 
-func (ps *Ps) Procfs() string {
+func (ps *Ps) GetProcfsPath() string {
 	return ps.procfs
 }
 
-func procMounted(procfs string) error {
+func isProcMounted(procfs string) error {
 	var buf syscall.Statfs_t
 	if err := syscall.Statfs(procfs, &buf); err != nil {
 		return err
@@ -75,7 +75,7 @@ func procMounted(procfs string) error {
 	return nil
 }
 
-func parseStat(name string) (pid, ppid int, err error) {
+func readProcStat(name string) (pid, ppid int, err error) {
 	b, err := os.ReadFile(name)
 	if err != nil {
 		return 0, 0, err
@@ -115,7 +115,7 @@ func Processes(procfs string) (p []Process, err error) {
 		return p, err
 	}
 	for _, stat := range matches {
-		pid, ppid, err := parseStat(stat)
+		pid, ppid, err := readProcStat(stat)
 		if err != nil {
 			continue
 		}
