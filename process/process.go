@@ -158,26 +158,25 @@ func Children(pids []Process, pid int) (cld []Process) {
 }
 
 func Descendents(pids []Process, pid int) []int {
-	seen := make(map[int]struct{})
-	cld := make([]Process, 0)
-	cld = walk(pids, pid, seen, cld)
-	children := make([]int, len(cld))
-	for i, p := range cld {
-		children[i] = p.Pid
-	}
-	return children
-}
-
-func walk(pids []Process, pid int, seen map[int]struct{}, cld []Process) []Process {
-	for _, p := range Children(pids, pid) {
-		if _, ok := seen[p.Pid]; ok {
-			continue
-		}
-		seen[p.Pid] = struct{}{}
-		cld = append(cld, p)
-		cld = walk(pids, p.Pid, seen, cld)
+	children := make(map[int]struct{})
+	walk(pids, pid, children)
+	cld := make([]int, len(children))
+	i := 0
+	for p := range children {
+		cld[i] = p
+		i++
 	}
 	return cld
+}
+
+func walk(pids []Process, pid int, children map[int]struct{}) {
+	for _, p := range Children(pids, pid) {
+		if _, ok := children[p.Pid]; ok {
+			continue
+		}
+		children[p.Pid] = struct{}{}
+		walk(pids, p.Pid, children)
+	}
 }
 
 func procChildrenPath(pid int, procfs string) (string, error) {
