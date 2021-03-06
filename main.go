@@ -163,7 +163,14 @@ func (state *stateT) execv(command string, args []string, env []string) int {
 	for {
 		select {
 		case sig := <-sigChan:
-			state.signalWith(sig.(syscall.Signal))
+			switch sig.(syscall.Signal) {
+			case syscall.SIGCHLD:
+			case syscall.SIGIO:
+			case syscall.SIGPIPE:
+			case syscall.SIGURG:
+			default:
+				state.signalWith(sig.(syscall.Signal))
+			}
 		case err := <-waitCh:
 			var waitStatus syscall.WaitStatus
 			var exitError *exec.ExitError
