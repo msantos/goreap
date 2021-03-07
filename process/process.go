@@ -40,13 +40,9 @@ func getenv(s, def string) string {
 
 func New() (*Ps, error) {
 	v := getenv("PROC", Procfs)
-	procfs, err := filepath.Abs(v)
+	procfs, err := procfsPath(v)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", v, err)
-	}
-
-	if err := isProcMounted(procfs); err != nil {
-		return nil, fmt.Errorf("%s: %w", procfs, err)
 	}
 
 	pid := os.Getpid()
@@ -63,6 +59,26 @@ func (ps *Ps) GetProcfsPath() string {
 	return ps.procfs
 }
 
+func (ps *Ps) SetProcfsPath(path string) error {
+	procfs, err := procfsPath(path)
+	if err != nil {
+		return err
+	}
+	ps.procfs = procfs
+	return nil
+}
+
+func procfsPath(path string) (string, error) {
+	procfs, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", path, err)
+	}
+	if err := isProcMounted(procfs); err != nil {
+		return "", fmt.Errorf("%s: %w", procfs, err)
+	}
+	return procfs, nil
+}
+
 func isProcMounted(procfs string) error {
 	var buf syscall.Statfs_t
 	if err := syscall.Statfs(procfs, &buf); err != nil {
@@ -71,7 +87,6 @@ func isProcMounted(procfs string) error {
 	if buf.Type != unix.PROC_SUPER_MAGIC {
 		return ErrProcNotMounted
 	}
-
 	return nil
 }
 
@@ -107,9 +122,9 @@ func readProcStat(name string) (pid, ppid int, err error) {
 	return pid, ppid, nil
 }
 
-func Processes(procfs string) (p []Process, err error) {
+func (ps *Ps) Processes() (p []Process, err error) {
 	matches, err := filepath.Glob(
-		fmt.Sprintf("%s/[0-9]*/stat", procfs),
+		fmt.Sprintf("%s/[0-9]*/stat", ps.procfs),
 	)
 	if err != nil {
 		return p, err
@@ -124,10 +139,6 @@ func Processes(procfs string) (p []Process, err error) {
 	return p, err
 }
 
-func (ps *Ps) Processes() (p []Process, err error) {
-	return Processes(ps.procfs)
-}
-
 func (ps *Ps) Children() ([]int, error) {
 	if ps.ProcChildren != "" {
 		return ps.ReadProcChildren()
@@ -135,29 +146,15 @@ func (ps *Ps) Children() ([]int, error) {
 	return ps.ReadProcList()
 }
 
-func (ps *Ps) ReadProcListPid(pid int) ([]int, error) {
+func (ps *Ps) ReadProcList() ([]int, error) {
 	p, err := ps.Processes()
 	if err != nil {
 		return nil, err
 	}
-	return Descendents(p, pid), nil
+	return descendents(p, ps.Pid), nil
 }
 
-func (ps *Ps) ReadProcList() ([]int, error) {
-	return ps.ReadProcListPid(ps.Pid)
-}
-
-func Children(pids []Process, pid int) (cld []Process) {
-	for _, p := range pids {
-		if p.PPid != pid {
-			continue
-		}
-		cld = append(cld, p)
-	}
-	return cld
-}
-
-func Descendents(pids []Process, pid int) []int {
+func descendents(pids []Process, pid int) []int {
 	children := make(map[int]struct{})
 	walk(pids, pid, children)
 	cld := make([]int, len(children))
@@ -169,8 +166,18 @@ func Descendents(pids []Process, pid int) []int {
 	return cld
 }
 
+func subprocs(pids []Process, pid int) (cld []Process) {
+	for _, p := range pids {
+		if p.PPid != pid {
+			continue
+		}
+		cld = append(cld, p)
+	}
+	return cld
+}
+
 func walk(pids []Process, pid int, children map[int]struct{}) {
-	for _, p := range Children(pids, pid) {
+	for _, p := range subprocs(pids, pid) {
 		if _, ok := children[p.Pid]; ok {
 			continue
 		}
@@ -179,26 +186,8 @@ func walk(pids []Process, pid int, children map[int]struct{}) {
 	}
 }
 
-func procChildrenPath(pid int, procfs string) (string, error) {
-	children := fmt.Sprintf(
-		"%s/%d/task/%d/children",
-		procfs,
-		pid,
-		pid,
-	)
-	_, err := os.Stat(children)
-	if err != nil {
-		return "", err
-	}
-	return children, nil
-}
-
-func (ps *Ps) ProcChildrenPath(pid int) (string, error) {
-	return procChildrenPath(pid, ps.procfs)
-}
-
-func (ps *Ps) ReadProcChildrenPath(path string) ([]int, error) {
-	b, err := os.ReadFile(path)
+func (ps *Ps) ReadProcChildren() ([]int, error) {
+	b, err := os.ReadFile(ps.ProcChildren)
 	if err != nil {
 		return nil, err
 	}
@@ -216,6 +205,16 @@ func (ps *Ps) ReadProcChildrenPath(path string) ([]int, error) {
 	return children, nil
 }
 
-func (ps *Ps) ReadProcChildren() ([]int, error) {
-	return ps.ReadProcChildrenPath(ps.ProcChildren)
+func procChildrenPath(pid int, procfs string) (string, error) {
+	children := fmt.Sprintf(
+		"%s/%d/task/%d/children",
+		procfs,
+		pid,
+		pid,
+	)
+	_, err := os.Stat(children)
+	if err != nil {
+		return "", err
+	}
+	return children, nil
 }
