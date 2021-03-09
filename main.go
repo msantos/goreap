@@ -173,10 +173,12 @@ func (state *stateT) execv(command string, args []string, env []string) int {
 				state.signalWith(sig.(syscall.Signal))
 			}
 		case err := <-waitCh:
-			var waitStatus syscall.WaitStatus
 			var exitError *exec.ExitError
 			if errors.As(err, &exitError) {
-				waitStatus = exitError.Sys().(syscall.WaitStatus)
+				waitStatus := exitError.Sys().(syscall.WaitStatus)
+				if waitStatus.Signaled() {
+					return 128 + int(waitStatus.Signal())
+				}
 				return waitStatus.ExitStatus()
 			}
 			if err != nil {
