@@ -197,7 +197,7 @@ func (ps *Ps) ReadProcChildren() ([]int, error) {
 	for i, s := range pids {
 		pid, err := strconv.Atoi(s)
 		if err != nil {
-			return nil, err
+			continue
 		}
 		children[i] = pid
 	}
