@@ -1,4 +1,4 @@
-module goreap
+module github.com/msantos/goreap
 
 go 1.15
 

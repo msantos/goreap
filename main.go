@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"goreap/process"
+	"github.com/msantos/goreap/process"
 	"os"
 	"os/exec"
 	"os/signal"
