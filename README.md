@@ -10,6 +10,7 @@ See [reap](https://github.com/leahneukirchen/reap).
 
 # BUILDING
 
+    cd cmd/goreap
     CGO_ENABLED=0 go build -trimpath -ldflags "-s -w"
 
 # EXAMPLES
