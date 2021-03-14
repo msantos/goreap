@@ -4,12 +4,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/msantos/goreap/process"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path"
 	"syscall"
+
+	"github.com/msantos/goreap/process"
 
 	"golang.org/x/sys/unix"
 )
