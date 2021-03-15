@@ -12,21 +12,48 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// Default mount point for procfs filesystems. The default mountpoint
+// can be changed by setting the PROC environment variable:
+//
+//    export PROC=/tmp/proc
+//
 const Procfs = "/proc"
 
+// Configuration state for the process.
+//
+// The Pid field defaults to the PID of the current process.
+//
+// ProcChildren contains the path to the procfs(5) children file:
+//
+//    A space-separated list of child tasks of this task.  Each child task
+//    is represented by its TID.
+//
+// If the kernel was compiled with CONFIG_PROC_CHILDREN enabled, the
+// default path is set to /proc/[Pid]/task/[Pid]/children.
+//
+// If CONFIG_PROC_CHILDREN is not supported, the value is set to an
+// empty string.
 type Ps struct {
 	Pid          int
 	ProcChildren string
 	procfs       string
 }
 
+// Contents of /proc/stat for a process.
+//
+// Pid is the process ID.
+//
+// PPid is the parent process ID.
 type Process struct {
 	Pid  int
 	PPid int
 }
 
 var (
+  // /proc is not mounted or is not a procfs filesystem
 	ErrProcNotMounted    = errors.New("procfs not mounted")
+
+  // /proc/<pid>/stat is malformed
 	ErrParseFailProcStat = errors.New("unable to parse stat")
 )
 
@@ -38,6 +65,8 @@ func getenv(s, def string) string {
 	return v
 }
 
+// Create the default configuration state for the process.
+// Returns an error if /proc is not mounted or is not a procfs filesystem.
 func New() (*Ps, error) {
 	v := getenv("PROC", Procfs)
 	procfs, err := procfsPath(v)
@@ -55,10 +84,13 @@ func New() (*Ps, error) {
 	}, nil
 }
 
+// Get the current procfs path.
 func (ps *Ps) GetProcfsPath() string {
 	return ps.procfs
 }
 
+// Set the current procfs path, returning an error if the path is not
+// a procfs filesystem.
 func (ps *Ps) SetProcfsPath(path string) error {
 	procfs, err := procfsPath(path)
 	if err != nil {
@@ -122,6 +154,7 @@ func readProcStat(name string) (pid, ppid int, err error) {
 	return pid, ppid, nil
 }
 
+// Retrieve the process table.
 func (ps *Ps) Processes() (p []Process, err error) {
 	matches, err := filepath.Glob(
 		fmt.Sprintf("%s/[0-9]*/stat", ps.procfs),
@@ -139,6 +172,7 @@ func (ps *Ps) Processes() (p []Process, err error) {
 	return p, err
 }
 
+// Return the list of subprocesses for a PID.
 func (ps *Ps) Children() ([]int, error) {
 	if ps.ProcChildren != "" {
 		return ps.ReadProcChildren()
@@ -146,6 +180,7 @@ func (ps *Ps) Children() ([]int, error) {
 	return ps.ReadProcList()
 }
 
+// Return the list of subprocesses for a PID by traversing /proc.
 func (ps *Ps) ReadProcList() ([]int, error) {
 	p, err := ps.Processes()
 	if err != nil {
@@ -186,6 +221,7 @@ func walk(pids []Process, pid int, children map[int]struct{}) {
 	}
 }
 
+// Return the list of subprocesses for a PID by reading /proc/children.
 func (ps *Ps) ReadProcChildren() ([]int, error) {
 	b, err := os.ReadFile(ps.ProcChildren)
 	if err != nil {
