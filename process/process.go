@@ -50,10 +50,12 @@ type Process struct {
 }
 
 var (
-  // /proc is not mounted or is not a procfs filesystem
-	ErrProcNotMounted    = errors.New("procfs not mounted")
+	// ErrProcNotMounted is returned if /proc is not mounted or is
+	// not a procfs filesystem.
+	ErrProcNotMounted = errors.New("procfs not mounted")
 
-  // /proc/<pid>/stat is malformed
+	// ErrParseFailProcStat is returned if /proc/<pid>/stat is
+	// malformed.
 	ErrParseFailProcStat = errors.New("unable to parse stat")
 )
 
