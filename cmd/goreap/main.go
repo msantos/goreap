@@ -8,7 +8,9 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
+	"sync"
 	"syscall"
+	"time"
 
 	"github.com/msantos/goreap/process"
 
@@ -18,11 +20,14 @@ import (
 var version = "0.4.0"
 
 type stateT struct {
+	sync.RWMutex
+
 	argv          []string
 	sig           syscall.Signal
 	disableSetuid bool
 	wait          bool
 	verbose       bool
+	deadline      time.Duration
 	ps            *process.Ps
 }
 
@@ -41,6 +46,11 @@ Options:
 	disableSetuid := flag.Bool("disable-setuid", false,
 		"disallow setuid (unkillable) subprocesses")
 	wait := flag.Bool("wait", false, "wait for subprocesses to exit")
+	deadline := flag.Duration(
+		"deadline",
+		0,
+		"send SIGKILL if processes running after deadline (0 to disable)",
+	)
 	verbose := flag.Bool("verbose", false, "debug output")
 
 	flag.Parse()
@@ -61,6 +71,7 @@ Options:
 		sig:           syscall.Signal(*sig),
 		disableSetuid: *disableSetuid,
 		wait:          *wait,
+		deadline:      *deadline,
 		verbose:       *verbose,
 		ps:            ps,
 	}
@@ -96,7 +107,10 @@ func kill(pid int, sig syscall.Signal) {
 }
 
 func (state *stateT) signal() {
-	state.signalWith(state.sig)
+	state.RLock()
+	sig := state.sig
+	state.RUnlock()
+	state.signalWith(sig)
 }
 
 func (state *stateT) signalWith(sig syscall.Signal) {
@@ -118,6 +132,16 @@ func (state *stateT) signalWith(sig syscall.Signal) {
 
 func (state *stateT) reap() error {
 	if !state.wait {
+		go func() {
+			if state.deadline == 0 || state.sig == syscall.SIGKILL {
+				return
+			}
+			time.Sleep(state.deadline)
+			state.Lock()
+			defer state.Unlock()
+			state.sig = syscall.SIGKILL
+		}()
+
 		go func() {
 			for {
 				state.signal()
