@@ -17,7 +17,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.4.0"
+var version = "0.5.0"
 
 type stateT struct {
 	sync.RWMutex
@@ -48,7 +48,7 @@ Options:
 	wait := flag.Bool("wait", false, "wait for subprocesses to exit")
 	deadline := flag.Duration(
 		"deadline",
-		0,
+		60*time.Second,
 		"send SIGKILL if processes running after deadline (0 to disable)",
 	)
 	verbose := flag.Bool("verbose", false, "debug output")

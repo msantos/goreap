@@ -35,6 +35,9 @@ See [reap](https://github.com/leahneukirchen/reap).
 
 # OPTIONS
 
+deadline
+: send SIGKILL if processes running after deadline (0 to disable) (default 60s)
+
 disable-setuid
 : disallow setuid (unkillable) subprocesses
 
