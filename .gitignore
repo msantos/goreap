@@ -15,4 +15,5 @@
 # vendor/
 
 cmd/goreap/goreap
+cmd/pstree/pstree
 test/src/worm
