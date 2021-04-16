@@ -150,9 +150,8 @@ func (state *stateT) reap() error {
 	}
 
 	for {
-		pid, err := syscall.Wait4(-1, nil, 0, nil)
+		_, err := syscall.Wait4(-1, nil, 0, nil)
 		switch {
-		case pid == 0:
 		case err == nil:
 		case errors.Is(err, syscall.EINTR):
 		case errors.Is(err, syscall.ECHILD):
