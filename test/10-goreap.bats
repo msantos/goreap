@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-export PATH="$PATH:$PWD:$PWD/test/src"
+export PATH="$PWD:$PWD/cmd/goreap:$PWD/test/src:$PATH"
 
 @test "exit: subprocesses terminated" {
     run goreap worm 0
