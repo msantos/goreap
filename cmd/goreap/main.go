@@ -98,12 +98,10 @@ func main() {
 
 func kill(pid int, sig syscall.Signal) {
 	err := syscall.Kill(pid, sig)
-	switch {
-	case err == nil:
-	case errors.Is(err, syscall.ESRCH):
-	default:
-		fmt.Fprintln(os.Stderr, err)
+	if err == nil || errors.Is(err, syscall.ESRCH) {
+		return
 	}
+	fmt.Fprintln(os.Stderr, err)
 }
 
 func (state *stateT) signal() {
@@ -152,8 +150,7 @@ func (state *stateT) reap() error {
 	for {
 		_, err := syscall.Wait4(-1, nil, 0, nil)
 		switch {
-		case err == nil:
-		case errors.Is(err, syscall.EINTR):
+		case err == nil, errors.Is(err, syscall.EINTR):
 		case errors.Is(err, syscall.ECHILD):
 			return nil
 		default:
@@ -189,10 +186,7 @@ func (state *stateT) execv(command string, args []string, env []string) int {
 		select {
 		case sig := <-sigChan:
 			switch sig.(syscall.Signal) {
-			case syscall.SIGCHLD:
-			case syscall.SIGIO:
-			case syscall.SIGPIPE:
-			case syscall.SIGURG:
+			case syscall.SIGCHLD, syscall.SIGIO, syscall.SIGPIPE, syscall.SIGURG:
 			default:
 				state.signalWith(sig.(syscall.Signal))
 			}
