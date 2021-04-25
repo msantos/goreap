@@ -250,8 +250,7 @@ func procChildrenPath(pid int, procfs string) (string, error) {
 		pid,
 		pid,
 	)
-	_, err := os.Stat(children)
-	if err != nil {
+	if _, err := os.Stat(children); err != nil {
 		return "", err
 	}
 	return children, nil
