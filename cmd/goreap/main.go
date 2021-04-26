@@ -191,19 +191,22 @@ func (state *stateT) execv(command string, args []string, env []string) int {
 				state.signalWith(sig.(syscall.Signal))
 			}
 		case err := <-waitCh:
+			if err == nil {
+				return 0
+			}
+
 			var exitError *exec.ExitError
 			if errors.As(err, &exitError) {
-				waitStatus := exitError.Sys().(syscall.WaitStatus)
-				if waitStatus.Signaled() {
-					return 128 + int(waitStatus.Signal())
+				if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
+					if waitStatus.Signaled() {
+						return 128 + int(waitStatus.Signal())
+					}
+					return waitStatus.ExitStatus()
 				}
-				return waitStatus.ExitStatus()
 			}
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				return 111
-			}
-			return 0
+
+			fmt.Fprintln(os.Stderr, err)
+			return 111
 		}
 	}
 }
