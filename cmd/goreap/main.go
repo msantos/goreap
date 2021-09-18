@@ -17,7 +17,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.5.0"
+var version = "0.6.0"
 
 type stateT struct {
 	sync.RWMutex
@@ -28,6 +28,7 @@ type stateT struct {
 	wait          bool
 	verbose       bool
 	deadline      time.Duration
+	delay         time.Duration
 	ps            *process.Ps
 }
 
@@ -51,6 +52,11 @@ Options:
 		60*time.Second,
 		"send SIGKILL if processes running after deadline (0 to disable)",
 	)
+	delay := flag.Duration(
+		"delay",
+		1*time.Second,
+		"delay between signals (0 to disable)",
+	)
 	verbose := flag.Bool("verbose", false, "debug output")
 
 	flag.Parse()
@@ -72,6 +78,7 @@ Options:
 		disableSetuid: *disableSetuid,
 		wait:          *wait,
 		deadline:      *deadline,
+		delay:         *delay,
 		verbose:       *verbose,
 		ps:            ps,
 	}
@@ -143,6 +150,7 @@ func (state *stateT) reap() error {
 		go func() {
 			for {
 				state.signal()
+				time.Sleep(state.delay)
 			}
 		}()
 	}
