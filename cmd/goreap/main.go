@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
-	"sync"
 	"syscall"
 	"time"
 
@@ -17,11 +16,9 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.6.0"
+var version = "0.6.1"
 
 type stateT struct {
-	sync.RWMutex
-
 	argv          []string
 	sig           syscall.Signal
 	disableSetuid bool
@@ -31,6 +28,10 @@ type stateT struct {
 	delay         time.Duration
 	ps            *process.Ps
 }
+
+const (
+	maxInt64 = 1<<63 - 1
+)
 
 func args() *stateT {
 	flag.Usage = func() {
@@ -111,13 +112,6 @@ func kill(pid int, sig syscall.Signal) {
 	fmt.Fprintln(os.Stderr, err)
 }
 
-func (state *stateT) signal() {
-	state.RLock()
-	sig := state.sig
-	state.RUnlock()
-	state.signalWith(sig)
-}
-
 func (state *stateT) signalWith(sig syscall.Signal) {
 	pids, err := state.ps.Children()
 	if err != nil {
@@ -138,19 +132,23 @@ func (state *stateT) signalWith(sig syscall.Signal) {
 func (state *stateT) reap() error {
 	if !state.wait {
 		go func() {
-			if state.deadline == 0 || state.sig == syscall.SIGKILL {
-				return
+			deadline := state.deadline
+			if deadline <= 0 {
+				deadline = time.Duration(maxInt64)
 			}
-			time.Sleep(state.deadline)
-			state.Lock()
-			defer state.Unlock()
-			state.sig = syscall.SIGKILL
-		}()
 
-		go func() {
+			t := time.NewTimer(deadline)
+
+			sig := state.sig
+
 			for {
-				state.signal()
-				time.Sleep(state.delay)
+				select {
+				case <-t.C:
+					sig = syscall.SIGKILL
+				default:
+					state.signalWith(sig)
+					time.Sleep(state.delay)
+				}
 			}
 		}()
 	}
