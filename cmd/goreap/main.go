@@ -121,8 +121,7 @@ func (state *stateT) signalWith(sig syscall.Signal) {
 
 	for _, pid := range pids {
 		if state.verbose {
-			fmt.Fprintf(os.Stderr, "%d: kill %s %d\n",
-				state.ps.Pid, unix.SignalName(sig), pid)
+			fmt.Fprintf(os.Stderr, "%d: kill %d %d\n", state.ps.Pid, sig, pid)
 		}
 
 		kill(pid, sig)
