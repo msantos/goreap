@@ -16,7 +16,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.6.1"
+var version = "0.7.0"
 
 type stateT struct {
 	argv          []string
@@ -27,6 +27,7 @@ type stateT struct {
 	deadline      time.Duration
 	delay         time.Duration
 	ps            *process.Ps
+	sigChan       chan os.Signal
 }
 
 const (
@@ -73,6 +74,9 @@ Options:
 		os.Exit(111)
 	}
 
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan)
+
 	return &stateT{
 		argv:          flag.Args(),
 		sig:           syscall.Signal(*sig),
@@ -82,6 +86,7 @@ Options:
 		delay:         *delay,
 		verbose:       *verbose,
 		ps:            ps,
+		sigChan:       sigChan,
 	}
 }
 
@@ -129,28 +134,38 @@ func (state *stateT) signalWith(sig syscall.Signal) {
 }
 
 func (state *stateT) reap() error {
-	if !state.wait {
-		go func() {
-			deadline := state.deadline
-			if deadline <= 0 {
-				deadline = time.Duration(maxInt64)
-			}
+	go func() {
+		deadline := state.deadline
+		if deadline <= 0 {
+			deadline = time.Duration(maxInt64)
+		}
 
-			t := time.NewTimer(deadline)
+		t := time.NewTimer(deadline)
+		tick := time.NewTicker(state.delay)
 
-			sig := state.sig
+		sig := state.sig
 
-			for {
-				select {
-				case <-t.C:
-					sig = syscall.SIGKILL
+		if !state.wait {
+			state.signalWith(sig)
+		}
+
+		for {
+			select {
+			case <-t.C:
+				sig = syscall.SIGKILL
+			case sig := <-state.sigChan:
+				switch sig.(syscall.Signal) {
+				case syscall.SIGCHLD, syscall.SIGIO, syscall.SIGPIPE, syscall.SIGURG:
 				default:
+					state.signalWith(sig.(syscall.Signal))
+				}
+			case <-tick.C:
+				if !state.wait {
 					state.signalWith(sig)
-					time.Sleep(state.delay)
 				}
 			}
-		}()
-	}
+		}
+	}()
 
 	for {
 		_, err := syscall.Wait4(-1, nil, 0, nil)
@@ -184,12 +199,10 @@ func (state *stateT) execv(command string, args []string, env []string) int {
 		waitCh <- cmd.Wait()
 		close(waitCh)
 	}()
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan)
 
 	for {
 		select {
-		case sig := <-sigChan:
+		case sig := <-state.sigChan:
 			switch sig.(syscall.Signal) {
 			case syscall.SIGCHLD, syscall.SIGIO, syscall.SIGPIPE, syscall.SIGURG:
 			default:
