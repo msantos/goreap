@@ -200,6 +200,8 @@ func (state *stateT) execv(command string, args []string, env []string) int {
 		close(waitCh)
 	}()
 
+	var exitError *exec.ExitError
+
 	for {
 		select {
 		case sig := <-state.sigChan:
@@ -213,18 +215,22 @@ func (state *stateT) execv(command string, args []string, env []string) int {
 				return 0
 			}
 
-			var exitError *exec.ExitError
-			if errors.As(err, &exitError) {
-				if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
-					if waitStatus.Signaled() {
-						return 128 + int(waitStatus.Signal())
-					}
-					return waitStatus.ExitStatus()
-				}
+			if !errors.As(err, &exitError) {
+				fmt.Fprintln(os.Stderr, err)
+				return 111
 			}
 
-			fmt.Fprintln(os.Stderr, err)
-			return 111
+			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
+			if !ok {
+				fmt.Fprintln(os.Stderr, err)
+				return 111
+			}
+
+			if waitStatus.Signaled() {
+				return 128 + int(waitStatus.Signal())
+			}
+
+			return waitStatus.ExitStatus()
 		}
 	}
 }
