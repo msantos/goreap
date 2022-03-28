@@ -9,8 +9,14 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: <pid>")
+	strategy := "any"
+
+	switch len(os.Args) {
+	case 3:
+		strategy = os.Args[2]
+	case 2:
+	default:
+		fmt.Fprintln(os.Stderr, "usage: <pid> [<strategy: any | ps | children>]")
 		os.Exit(1)
 	}
 
@@ -20,13 +26,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	ps, err := process.New()
+	ps, err := process.New(process.SetPid(pid), process.SetStrategy(strategy))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-
-	ps.Pid = pid
 
 	children, err := ps.Children()
 	if err != nil {

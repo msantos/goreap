@@ -14,8 +14,8 @@ func TestNew(t *testing.T) {
 		t.Errorf("%v", err)
 		return
 	}
-	if pid := os.Getpid(); pid != ps.Pid {
-		t.Errorf("pid = %d, want %d", ps.Pid, pid)
+	if pid := os.Getpid(); pid != ps.Pid() {
+		t.Errorf("pid = %d, want %d", ps.Pid(), pid)
 		return
 	}
 }
@@ -42,13 +42,12 @@ func TestNewWithProcfs(t *testing.T) {
 }
 
 func TestReadProcList(t *testing.T) {
-	ps, err := process.New()
+	ps, err := process.New(process.SetPid(1), process.SetMethod("ps"))
 	if err != nil {
 		t.Errorf("%v", err)
 		return
 	}
-	ps.Pid = 1
-	pids, err := ps.ReadProcList()
+	pids, err := ps.Children()
 	if err != nil {
 		t.Errorf("%v", err)
 		return

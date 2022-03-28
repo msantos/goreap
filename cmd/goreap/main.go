@@ -16,7 +16,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.7.0"
+var version = "0.8.0"
 
 type stateT struct {
 	argv          []string
@@ -26,7 +26,7 @@ type stateT struct {
 	verbose       bool
 	deadline      time.Duration
 	delay         time.Duration
-	ps            *process.Ps
+	ps            process.Process
 	sigChan       chan os.Signal
 }
 
@@ -126,7 +126,7 @@ func (state *stateT) signalWith(sig syscall.Signal) {
 
 	for _, pid := range pids {
 		if state.verbose {
-			fmt.Fprintf(os.Stderr, "%d: kill %d %d\n", state.ps.Pid, sig, pid)
+			fmt.Fprintf(os.Stderr, "%d: kill %d %d\n", state.ps.Pid(), sig, pid)
 		}
 
 		kill(pid, sig)
