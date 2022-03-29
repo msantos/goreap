@@ -33,14 +33,6 @@ type PID struct {
 	PPid int
 }
 
-type Opt struct {
-	Procfs   string
-	Pid      int
-	Strategy string
-}
-
-type ProcessOption func(*Opt)
-
 var (
 	// ErrProcNotMounted is returned if /proc is not mounted or is
 	// not a procfs filesystem.
@@ -58,6 +50,14 @@ func getenv(s, def string) string {
 	}
 	return v
 }
+
+type Opt struct {
+	Procfs   string
+	Pid      int
+	Strategy string
+}
+
+type ProcessOption func(*Opt)
 
 // Create the default configuration state for the process.
 // Returns an error if /proc is not mounted or is not a procfs filesystem.

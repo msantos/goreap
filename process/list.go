@@ -28,11 +28,9 @@ func (ps *Ps) Children() ([]int, error) {
 func descendents(pids []PID, pid int) []int {
 	children := make(map[int]struct{})
 	walk(pids, pid, children)
-	cld := make([]int, len(children))
-	i := 0
+	cld := make([]int, 0, len(children))
 	for p := range children {
-		cld[i] = p
-		i++
+		cld = append(cld, p)
 	}
 	return cld
 }
