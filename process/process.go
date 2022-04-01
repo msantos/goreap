@@ -86,7 +86,7 @@ func New(opts ...ProcessOption) (Process, error) {
 	case "", "any":
 		ps, err := useProcChildren(procfs, o.Pid)
 		if err == nil {
-			return ps, err
+			return ps, nil
 		}
 		return useProcPs(procfs, o.Pid)
 	}

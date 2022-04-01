@@ -97,11 +97,17 @@ func New(opts ...ReapOption) (*Reap, error) {
 	return r, nil
 }
 
+func (r *Reap) setNoNewPrivs() error {
+	if !r.disableSetuid {
+		return nil
+	}
+
+	return unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
+}
+
 func (r *Reap) Exec(argv []string, env []string) (int, error) {
-	if r.disableSetuid {
-		if err := unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); err != nil {
-			return 111, fmt.Errorf("prctl(PR_SET_NO_NEW_PRIVS): %w", err)
-		}
+	if err := r.setNoNewPrivs(); err != nil {
+		return 111, fmt.Errorf("prctl(PR_SET_NO_NEW_PRIVS): %w", err)
 	}
 
 	exitStatus := r.execv(argv[0], argv[1:], env)
