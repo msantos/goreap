@@ -80,6 +80,9 @@ func New(opts ...ReapOption) (*Reap, error) {
 	sigch := make(chan os.Signal, 1)
 	signal.Notify(sigch)
 
+	r.sig = syscall.Signal(15)
+	r.delay = time.Duration(1) * time.Second
+	r.deadline = time.Duration(60) * time.Second
 	r.ps = ps
 	r.sigch = sigch
 
@@ -89,6 +92,10 @@ func New(opts ...ReapOption) (*Reap, error) {
 
 	if r.log == nil {
 		r.log = func(error) {}
+	}
+
+	if r.deadline == 0 {
+		r.deadline = time.Duration(maxInt64)
 	}
 
 	if err := unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0); err != nil {
@@ -139,12 +146,7 @@ func (r *Reap) signalWith(sig syscall.Signal) {
 
 func (r *Reap) reap() error {
 	go func() {
-		deadline := r.deadline
-		if deadline <= 0 {
-			deadline = time.Duration(maxInt64)
-		}
-
-		t := time.NewTimer(deadline)
+		t := time.NewTimer(r.deadline)
 		tick := time.NewTicker(r.delay)
 
 		sig := r.sig
