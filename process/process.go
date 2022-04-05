@@ -57,11 +57,11 @@ type Opt struct {
 	Strategy string
 }
 
-type ProcessOption func(*Opt)
+type Option func(*Opt)
 
 // Create the default configuration state for the process.
 // Returns an error if /proc is not mounted or is not a procfs filesystem.
-func New(opts ...ProcessOption) (Process, error) {
+func New(opts ...Option) (Process, error) {
 	v := getenv("PROC", Procfs)
 
 	o := &Opt{
@@ -114,19 +114,19 @@ func useProcPs(procfs string, pid int) (Process, error) {
 	}, nil
 }
 
-func SetPid(pid int) ProcessOption {
+func SetPid(pid int) Option {
 	return func(o *Opt) {
 		o.Pid = pid
 	}
 }
 
-func SetProcfs(procfs string) ProcessOption {
+func SetProcfs(procfs string) Option {
 	return func(o *Opt) {
 		o.Procfs = procfs
 	}
 }
 
-func SetStrategy(strategy string) ProcessOption {
+func SetStrategy(strategy string) Option {
 	return func(o *Opt) {
 		o.Strategy = strategy
 	}

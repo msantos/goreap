@@ -31,45 +31,45 @@ type Reap struct {
 	sigch chan os.Signal
 }
 
-type ReapOption func(*Reap)
+type Option func(*Reap)
 
-func SetDeadline(t time.Duration) ReapOption {
+func SetDeadline(t time.Duration) Option {
 	return func(r *Reap) {
 		r.deadline = t
 	}
 }
 
-func SetDelay(t time.Duration) ReapOption {
+func SetDelay(t time.Duration) Option {
 	return func(r *Reap) {
 		r.delay = t
 	}
 }
 
-func SetDisableSetuid(b bool) ReapOption {
+func SetDisableSetuid(b bool) Option {
 	return func(r *Reap) {
 		r.disableSetuid = b
 	}
 }
 
-func SetLog(f func(error)) ReapOption {
+func SetLog(f func(error)) Option {
 	return func(r *Reap) {
 		r.log = f
 	}
 }
 
-func SetSignal(sig int) ReapOption {
+func SetSignal(sig int) Option {
 	return func(r *Reap) {
 		r.sig = syscall.Signal(sig)
 	}
 }
 
-func SetWait(b bool) ReapOption {
+func SetWait(b bool) Option {
 	return func(r *Reap) {
 		r.wait = b
 	}
 }
 
-func New(opts ...ReapOption) (*Reap, error) {
+func New(opts ...Option) (*Reap, error) {
 	r := &Reap{}
 
 	ps, err := process.New()
@@ -96,6 +96,10 @@ func New(opts ...ReapOption) (*Reap, error) {
 
 	if r.deadline == 0 {
 		r.deadline = time.Duration(maxInt64)
+	}
+
+	if r.delay == 0 {
+		r.delay = time.Duration(1)
 	}
 
 	if err := unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0); err != nil {
