@@ -77,14 +77,7 @@ func TestDisableSetuid(t *testing.T) {
 			if status == 0 {
 				return fmt.Errorf("sudo: %d: %w", status, errSetuidEnabled)
 			}
-			v, err := unix.PrctlRetInt(unix.PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0)
-			if err != nil {
-				return err
-			}
-			if v == 1 {
-				return nil
-			}
-			return fmt.Errorf("prctl: %d: %w", v, errSetuidEnabled)
+			return nil
 		})
 	}
 
