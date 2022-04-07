@@ -69,21 +69,17 @@ Options:
 func main() {
 	state := args()
 
-	var l func(error)
-
-	if state.verbose {
-		l = func(err error) {
-			fmt.Println(err)
-		}
-	}
-
 	r, err := reap.New(
 		reap.SetDeadline(state.deadline),
 		reap.SetDelay(state.delay),
 		reap.SetDisableSetuid(state.disableSetuid),
 		reap.SetSignal(state.sig),
 		reap.SetWait(state.wait),
-		reap.SetLog(l),
+		reap.SetLog(func(err error) {
+			if state.verbose {
+				fmt.Println(err)
+			}
+		}),
 	)
 	if err != nil {
 		fmt.Println(err)
