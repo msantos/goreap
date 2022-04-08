@@ -114,19 +114,19 @@ func useProcPs(procfs string, pid int) (Process, error) {
 	}, nil
 }
 
-func SetPid(pid int) Option {
+func WithPid(pid int) Option {
 	return func(o *Opt) {
 		o.Pid = pid
 	}
 }
 
-func SetProcfs(procfs string) Option {
+func WithProcfs(procfs string) Option {
 	return func(o *Opt) {
 		o.Procfs = procfs
 	}
 }
 
-func SetStrategy(strategy string) Option {
+func WithStrategy(strategy string) Option {
 	return func(o *Opt) {
 		o.Strategy = strategy
 	}

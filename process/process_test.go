@@ -42,7 +42,7 @@ func TestNewWithProcfs(t *testing.T) {
 }
 
 func TestReadProcList(t *testing.T) {
-	ps, err := process.New(process.SetPid(1), process.SetStrategy("ps"))
+	ps, err := process.New(process.WithPid(1), process.WithStrategy("ps"))
 	if err != nil {
 		t.Errorf("%v", err)
 		return

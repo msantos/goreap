@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ps, err := process.New(process.SetPid(pid), process.SetStrategy(strategy))
+	ps, err := process.New(process.WithPid(pid), process.WithStrategy(strategy))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

@@ -33,37 +33,37 @@ type Reap struct {
 
 type Option func(*Reap)
 
-func SetDeadline(t time.Duration) Option {
+func WithDeadline(t time.Duration) Option {
 	return func(r *Reap) {
 		r.deadline = t
 	}
 }
 
-func SetDelay(t time.Duration) Option {
+func WithDelay(t time.Duration) Option {
 	return func(r *Reap) {
 		r.delay = t
 	}
 }
 
-func SetDisableSetuid(b bool) Option {
+func WithDisableSetuid(b bool) Option {
 	return func(r *Reap) {
 		r.disableSetuid = b
 	}
 }
 
-func SetLog(f func(error)) Option {
+func WithLog(f func(error)) Option {
 	return func(r *Reap) {
 		r.log = f
 	}
 }
 
-func SetSignal(sig int) Option {
+func WithSignal(sig int) Option {
 	return func(r *Reap) {
 		r.sig = syscall.Signal(sig)
 	}
 }
 
-func SetWait(b bool) Option {
+func WithWait(b bool) Option {
 	return func(r *Reap) {
 		r.wait = b
 	}

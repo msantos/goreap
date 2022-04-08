@@ -23,7 +23,7 @@ var (
 
 func TestNew(t *testing.T) {
 	_, err := reap.New(
-		reap.SetLog(func(err error) {
+		reap.WithLog(func(err error) {
 			t.Log(err)
 		}),
 	)
@@ -55,8 +55,8 @@ func TestNew(t *testing.T) {
 
 func TestDisableSetuid(t *testing.T) {
 	r, err := reap.New(
-		reap.SetDisableSetuid(true),
-		reap.SetLog(func(err error) {
+		reap.WithDisableSetuid(true),
+		reap.WithLog(func(err error) {
 			t.Log(err)
 		}),
 	)
@@ -122,7 +122,7 @@ func exec(r *reap.Reap, cmd []string, n int) error {
 
 func TestExec(t *testing.T) {
 	r, err := reap.New(
-		reap.SetLog(func(err error) {
+		reap.WithLog(func(err error) {
 			t.Log(err)
 		}),
 	)
@@ -143,9 +143,9 @@ func TestExec(t *testing.T) {
 
 func TestExecDeadline(t *testing.T) {
 	r, err := reap.New(
-		reap.SetSignal(15),
-		reap.SetDeadline(time.Duration(1)*time.Second),
-		reap.SetLog(func(err error) {
+		reap.WithSignal(15),
+		reap.WithDeadline(time.Duration(1)*time.Second),
+		reap.WithLog(func(err error) {
 			t.Log(err)
 		}),
 	)

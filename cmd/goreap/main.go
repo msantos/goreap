@@ -70,12 +70,12 @@ func main() {
 	state := args()
 
 	r, err := reap.New(
-		reap.SetDeadline(state.deadline),
-		reap.SetDelay(state.delay),
-		reap.SetDisableSetuid(state.disableSetuid),
-		reap.SetSignal(state.sig),
-		reap.SetWait(state.wait),
-		reap.SetLog(func(err error) {
+		reap.WithDeadline(state.deadline),
+		reap.WithDelay(state.delay),
+		reap.WithDisableSetuid(state.disableSetuid),
+		reap.WithSignal(state.sig),
+		reap.WithWait(state.wait),
+		reap.WithLog(func(err error) {
 			if state.verbose {
 				fmt.Println(err)
 			}
