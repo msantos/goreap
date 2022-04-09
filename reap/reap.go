@@ -149,6 +149,9 @@ func (r *Reap) signalWith(sig syscall.Signal) {
 }
 
 func (r *Reap) reap() error {
+	exitch := make(chan struct{})
+	defer close(exitch)
+
 	go func() {
 		t := time.NewTimer(r.deadline)
 		tick := time.NewTicker(r.delay)
@@ -161,6 +164,8 @@ func (r *Reap) reap() error {
 
 		for {
 			select {
+			case <-exitch:
+				return
 			case <-t.C:
 				sig = syscall.SIGKILL
 			case sig := <-r.sigch:
