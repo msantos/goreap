@@ -119,7 +119,11 @@ func (r *Reap) Exec(argv []string, env []string) (int, error) {
 		}
 	}
 
-	exitStatus := r.execv(argv[0], argv[1:], env)
+	exitStatus, err := r.execv(argv[0], argv[1:], env)
+	if err != nil {
+		return exitStatus, err
+	}
+
 	if err := r.reap(); err != nil {
 		return 111, err
 	}
@@ -194,7 +198,7 @@ func (r *Reap) reap() error {
 	}
 }
 
-func (r *Reap) execv(command string, args []string, env []string) int {
+func (r *Reap) execv(command string, args []string, env []string) (int, error) {
 	cmd := exec.Command(command, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -206,9 +210,9 @@ func (r *Reap) execv(command string, args []string, env []string) int {
 	}
 
 	if err := cmd.Start(); err != nil {
-		r.log(err)
-		return 127
+		return 127, err
 	}
+
 	waitCh := make(chan error, 1)
 	go func() {
 		waitCh <- cmd.Wait()
@@ -227,25 +231,23 @@ func (r *Reap) execv(command string, args []string, env []string) int {
 			}
 		case err := <-waitCh:
 			if err == nil {
-				return 0
+				return 0, nil
 			}
 
 			if !errors.As(err, &exitError) {
-				r.log(err)
-				return 111
+				return 111, err
 			}
 
 			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
 			if !ok {
-				r.log(err)
-				return 111
+				return 111, err
 			}
 
 			if waitStatus.Signaled() {
-				return 128 + int(waitStatus.Signal())
+				return 128 + int(waitStatus.Signal()), nil
 			}
 
-			return waitStatus.ExitStatus()
+			return waitStatus.ExitStatus(), nil
 		}
 	}
 }

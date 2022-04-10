@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"syscall"
 	"testing"
 	"time"
 	"unsafe"
@@ -72,6 +73,9 @@ func TestDisableSetuid(t *testing.T) {
 		g.Go(func() error {
 			status, err := r.Exec([]string{"sh", "-c", "sudo -h 2>/dev/null"}, os.Environ())
 			if err != nil {
+				if errors.Is(err, syscall.ECHILD) {
+					return nil
+				}
 				return err
 			}
 			if status == 0 {
@@ -100,7 +104,9 @@ func exec(r *reap.Reap, cmd []string, n int) error {
 	}
 
 	if err := g.Wait(); err != nil {
-		return err
+		if !errors.Is(err, syscall.ECHILD) {
+			return err
+		}
 	}
 
 	ps, err := process.New()
