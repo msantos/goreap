@@ -78,40 +78,26 @@ func New(opts ...Option) (Process, error) {
 		return nil, fmt.Errorf("%s: %w", o.Procfs, err)
 	}
 
+	ps := &Ps{
+		pid:    o.Pid,
+		procfs: procfs,
+	}
+
+	path, err := procChildrenExists(procfs, o.Pid)
+
 	switch o.Strategy {
 	case "children":
-		return useProcChildren(procfs, o.Pid)
+		return &ProcChildren{Ps: ps, procChildrenPath: path}, err
 	case "ps":
-		return useProcPs(procfs, o.Pid)
+		return ps, nil
 	case "", "any":
-		ps, err := useProcChildren(procfs, o.Pid)
 		if err == nil {
-			return ps, nil
+			return &ProcChildren{Ps: ps, procChildrenPath: path}, nil
 		}
-		return useProcPs(procfs, o.Pid)
+		return ps, nil
 	}
 
 	return nil, fmt.Errorf("unknown proc strategy")
-}
-
-func useProcChildren(procfs string, pid int) (Process, error) {
-	path, err := procChildrenPath(procfs, pid)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ProcChildren{
-		pid:              pid,
-		procfs:           procfs,
-		procChildrenPath: path,
-	}, nil
-}
-
-func useProcPs(procfs string, pid int) (Process, error) {
-	return &Ps{
-		pid:    pid,
-		procfs: procfs,
-	}, nil
 }
 
 func WithPid(pid int) Option {
@@ -132,7 +118,7 @@ func WithStrategy(strategy string) Option {
 	}
 }
 
-func procChildrenPath(procfs string, pid int) (string, error) {
+func procChildrenExists(procfs string, pid int) (string, error) {
 	children := fmt.Sprintf(
 		"%s/%d/task/%d/children",
 		procfs,
