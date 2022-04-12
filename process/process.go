@@ -153,10 +153,10 @@ func isProcMounted(procfs string) error {
 	return nil
 }
 
-func readProcStat(name string) (pid, ppid int, err error) {
+func readProcStat(name string) (PID, error) {
 	b, err := os.ReadFile(name)
 	if err != nil {
-		return 0, 0, err
+		return PID{}, err
 	}
 
 	// <pid> (<comm>) <state> <ppid> ...
@@ -169,20 +169,24 @@ func readProcStat(name string) (pid, ppid int, err error) {
 	// S) R ...
 	stat := string(b)
 
+	var pid int
+
 	if n, err := fmt.Sscanf(stat, "%d ", &pid); err != nil || n != 1 {
-		return 0, 0, ErrParseFailProcStat
+		return PID{}, ErrParseFailProcStat
 	}
 
 	bracket := strings.LastIndexByte(stat, ')')
 	if bracket == -1 {
-		return 0, 0, ErrParseFailProcStat
+		return PID{}, ErrParseFailProcStat
 	}
 
 	var state byte
+	var ppid int
+
 	if n, err := fmt.Sscanf(stat[bracket+1:], " %c %d", &state, &ppid); err != nil || n != 2 {
-		return 0, 0, ErrParseFailProcStat
+		return PID{}, ErrParseFailProcStat
 	}
-	return pid, ppid, nil
+	return PID{Pid: pid, PPid: ppid}, nil
 }
 
 // Scan the process table in /proc.
@@ -194,11 +198,11 @@ func Processes(procfs string) (p []PID, err error) {
 		return p, err
 	}
 	for _, stat := range matches {
-		pid, ppid, err := readProcStat(stat)
+		pid, err := readProcStat(stat)
 		if err != nil {
 			continue
 		}
-		p = append(p, PID{Pid: pid, PPid: ppid})
+		p = append(p, pid)
 	}
 	return p, err
 }
