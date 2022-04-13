@@ -41,6 +41,8 @@ var (
 	// ErrParseFailProcStat is returned if /proc/<pid>/stat is
 	// malformed.
 	ErrParseFailProcStat = errors.New("unable to parse stat")
+
+	ErrUnsupportedProcStrategy = errors.New("unsupported proc strategy")
 )
 
 func getenv(s, def string) string {
@@ -97,7 +99,7 @@ func New(opts ...Option) (Process, error) {
 		return ps, nil
 	}
 
-	return nil, fmt.Errorf("unknown proc strategy")
+	return nil, ErrUnsupportedProcStrategy
 }
 
 func WithPid(pid int) Option {

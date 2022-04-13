@@ -22,21 +22,13 @@ func TestNew(t *testing.T) {
 
 func TestNewWithProcfs(t *testing.T) {
 	procfs := "/bin"
-	if err := os.Setenv("PROC", procfs); err != nil {
-		t.Errorf("%v", err)
-		return
-	}
-	_, err := process.New()
+	_, err := process.New(process.WithProcfs(procfs))
 	if err == nil {
 		t.Errorf("non-existent procfs %s", procfs)
 		return
 	}
 	if !errors.Is(err, process.ErrProcNotMounted) {
 		t.Errorf("procfs error = %v, want %v", err, process.ErrProcNotMounted)
-		return
-	}
-	if err := os.Unsetenv("PROC"); err != nil {
-		t.Errorf("%v", err)
 		return
 	}
 }
