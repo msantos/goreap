@@ -27,8 +27,9 @@ type Reap struct {
 	delay         time.Duration
 	log           func(error)
 
-	ps    process.Process
 	sigch chan os.Signal
+
+	process.Process
 }
 
 type Option func(*Reap)
@@ -83,7 +84,7 @@ func New(opts ...Option) (*Reap, error) {
 	r.sig = syscall.Signal(15)
 	r.delay = time.Duration(1) * time.Second
 	r.deadline = time.Duration(60) * time.Second
-	r.ps = ps
+	r.Process = ps
 	r.sigch = sigch
 
 	for _, opt := range opts {
@@ -140,14 +141,14 @@ func (r *Reap) kill(pid int, sig syscall.Signal) {
 }
 
 func (r *Reap) signalWith(sig syscall.Signal) {
-	pids, err := r.ps.Children()
+	pids, err := r.Children()
 	if err != nil {
 		r.log(err)
 		return
 	}
 
 	for _, pid := range pids {
-		r.log(fmt.Errorf("%d: kill %d %d", r.ps.Pid(), sig, pid))
+		r.log(fmt.Errorf("%d: kill %d %d", r.Pid(), sig, pid))
 		r.kill(pid, sig)
 	}
 }
