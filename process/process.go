@@ -75,7 +75,7 @@ func New(opts ...Option) (Process, error) {
 		opt(o)
 	}
 
-	procfs, err := procfsPath(o.Procfs)
+	procfs, err := procfsExists(o.Procfs)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", o.Procfs, err)
 	}
@@ -133,7 +133,7 @@ func procChildrenExists(procfs string, pid int) (string, error) {
 	return children, nil
 }
 
-func procfsPath(path string) (string, error) {
+func procfsExists(path string) (string, error) {
 	procfs, err := filepath.Abs(path)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", path, err)
