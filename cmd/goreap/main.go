@@ -10,7 +10,7 @@ import (
 	"github.com/msantos/goreap/reap"
 )
 
-var version = "0.8.0"
+var version = "0.9.0"
 
 type stateT struct {
 	argv          []string

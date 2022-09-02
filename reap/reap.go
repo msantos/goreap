@@ -214,10 +214,9 @@ func (r *Reap) execv(command string, args []string, env []string) (int, error) {
 		return 127, err
 	}
 
-	waitCh := make(chan error, 1)
+	waitch := make(chan error, 1)
 	go func() {
-		waitCh <- cmd.Wait()
-		close(waitCh)
+		waitch <- cmd.Wait()
 	}()
 
 	var exitError *exec.ExitError
@@ -230,7 +229,7 @@ func (r *Reap) execv(command string, args []string, env []string) (int, error) {
 			default:
 				r.signalWith(sig.(syscall.Signal))
 			}
-		case err := <-waitCh:
+		case err := <-waitch:
 			if err == nil {
 				return 0, nil
 			}
