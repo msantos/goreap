@@ -14,8 +14,7 @@ import (
 // Default mount point for procfs filesystems. The default mountpoint
 // can be changed by setting the PROC environment variable:
 //
-//    export PROC=/tmp/proc
-//
+//	export PROC=/tmp/proc
 const Procfs = "/proc"
 
 type Process interface {

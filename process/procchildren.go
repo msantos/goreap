@@ -10,8 +10,8 @@ import (
 //
 // Contains the path to the procfs(5) children file:
 //
-//    A space-separated list of child tasks of this task.  Each child task
-//    is represented by its TID.
+//	A space-separated list of child tasks of this task.  Each child task
+//	is represented by its TID.
 //
 // If the kernel was compiled with CONFIG_PROC_CHILDREN enabled, the
 // default path is set to /proc/[Pid]/task/[Pid]/children.

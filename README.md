@@ -55,5 +55,4 @@ wait
 
 # TESTS
 
-    cc -g -Wall -o test/src/worm test/src/worm.c
     bats test
