@@ -10,7 +10,7 @@ import (
 	"github.com/msantos/goreap/reap"
 )
 
-var version = "0.9.0"
+var version = "0.9.1"
 
 type stateT struct {
 	argv          []string
@@ -52,7 +52,7 @@ Options:
 
 	if flag.NArg() < 1 {
 		flag.Usage()
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	return &stateT{

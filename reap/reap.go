@@ -235,12 +235,12 @@ func (r *Reap) execv(command string, args []string, env []string) (int, error) {
 			}
 
 			if !errors.As(err, &exitError) {
-				return 111, err
+				return 128, err
 			}
 
 			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
 			if !ok {
-				return 111, err
+				return 128, err
 			}
 
 			if waitStatus.Signaled() {
