@@ -46,9 +46,15 @@ Options:
 		1*time.Second,
 		"delay between signals (0 to disable)",
 	)
+	showVersion := flag.Bool("version", false, "display version and exit")
 	verbose := flag.Bool("verbose", false, "debug output")
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
 
 	if flag.NArg() < 1 {
 		flag.Usage()
