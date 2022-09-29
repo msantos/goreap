@@ -1,7 +1,9 @@
 package process
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -14,15 +16,35 @@ import (
 //	is represented by its TID.
 //
 // If the kernel was compiled with CONFIG_PROC_CHILDREN enabled, the
-// default path is set to /proc/[Pid]/task/[Pid]/children.
+// default path is set to /proc/self/task/*/children.
 type ProcChildren struct {
 	*Ps
-	procChildrenPath string
 }
 
 // Return the list of subprocesses for a PID by reading /proc/children.
 func (ps *ProcChildren) Children() ([]int, error) {
-	b, err := os.ReadFile(ps.procChildrenPath)
+	pids := make([]int, 0)
+
+	paths, err := filepath.Glob(
+		fmt.Sprintf("%s/self/task/*/children", ps.procfs),
+	)
+	if err != nil {
+		return pids, err
+	}
+
+	for _, v := range paths {
+		pid, err := ps.readChildren(v)
+		if err != nil {
+			return pids, err
+		}
+		pids = append(pids, pid...)
+	}
+
+	return pids, nil
+}
+
+func (ps *ProcChildren) readChildren(path string) ([]int, error) {
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

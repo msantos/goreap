@@ -37,7 +37,7 @@ var (
 	// not a procfs filesystem.
 	ErrProcNotMounted = errors.New("procfs not mounted")
 
-	// ErrParseFailProcStat is returned if /proc/<pid>/stat is
+	// ErrParseFailProcStat is returned if /proc/[PID]/stat is
 	// malformed.
 	ErrParseFailProcStat = errors.New("unable to parse stat")
 
@@ -84,16 +84,16 @@ func New(opts ...Option) (Process, error) {
 		procfs: procfs,
 	}
 
-	path, err := procChildrenExists(procfs, o.Pid)
+	err = procChildrenExists(procfs, o.Pid)
 
 	switch o.Strategy {
 	case "children":
-		return &ProcChildren{Ps: ps, procChildrenPath: path}, err
+		return &ProcChildren{Ps: ps}, err
 	case "ps":
 		return ps, nil
 	case "", "any":
 		if err == nil {
-			return &ProcChildren{Ps: ps, procChildrenPath: path}, nil
+			return &ProcChildren{Ps: ps}, nil
 		}
 		return ps, nil
 	}
@@ -119,17 +119,14 @@ func WithStrategy(strategy string) Option {
 	}
 }
 
-func procChildrenExists(procfs string, pid int) (string, error) {
+func procChildrenExists(procfs string, pid int) error {
 	children := fmt.Sprintf(
-		"%s/%d/task/%d/children",
+		"%s/self/task/%d/children",
 		procfs,
 		pid,
-		pid,
 	)
-	if _, err := os.Stat(children); err != nil {
-		return "", err
-	}
-	return children, nil
+	_, err := os.Stat(children)
+	return err
 }
 
 func procfsExists(path string) (string, error) {
