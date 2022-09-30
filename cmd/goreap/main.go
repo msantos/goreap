@@ -10,27 +10,19 @@ import (
 	"github.com/msantos/goreap/reap"
 )
 
-var version = "0.9.1"
+var version = "0.10.0"
 
-type stateT struct {
-	argv          []string
-	sig           int
-	disableSetuid bool
-	wait          bool
-	verbose       bool
-	deadline      time.Duration
-	delay         time.Duration
-}
-
-func args() *stateT {
-	flag.Usage = func() {
-		_, _ = fmt.Fprintf(os.Stderr, `%s v%s
+func usage() {
+	fmt.Fprintf(os.Stderr, `%s v%s
 Usage: %s [options] <command> <...>
 
 Options:
 `, path.Base(os.Args[0]), version, os.Args[0])
-		flag.PrintDefaults()
-	}
+	flag.PrintDefaults()
+}
+
+func main() {
+	flag.Usage = func() { usage() }
 
 	sig := flag.Int("signal", 15, "signal sent to supervised processes")
 	disableSetuid := flag.Bool("disable-setuid", false,
@@ -61,28 +53,14 @@ Options:
 		os.Exit(2)
 	}
 
-	return &stateT{
-		argv:          flag.Args(),
-		sig:           *sig,
-		disableSetuid: *disableSetuid,
-		wait:          *wait,
-		deadline:      *deadline,
-		delay:         *delay,
-		verbose:       *verbose,
-	}
-}
-
-func main() {
-	state := args()
-
 	r, err := reap.New(
-		reap.WithDeadline(state.deadline),
-		reap.WithDelay(state.delay),
-		reap.WithDisableSetuid(state.disableSetuid),
-		reap.WithSignal(state.sig),
-		reap.WithWait(state.wait),
+		reap.WithDeadline(*deadline),
+		reap.WithDelay(*delay),
+		reap.WithDisableSetuid(*disableSetuid),
+		reap.WithSignal(*sig),
+		reap.WithWait(*wait),
 		reap.WithLog(func(err error) {
-			if state.verbose {
+			if *verbose {
 				fmt.Println(err)
 			}
 		}),
@@ -92,9 +70,9 @@ func main() {
 		os.Exit(111)
 	}
 
-	status, err := r.Exec(state.argv, os.Environ())
+	status, err := r.Exec(flag.Args(), os.Environ())
 	if err != nil {
-		fmt.Printf("%s: %s\n", state.argv[0], err)
+		fmt.Printf("%s: %s\n", flag.Arg(0), err)
 	}
 
 	os.Exit(status)
