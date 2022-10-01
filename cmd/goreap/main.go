@@ -53,7 +53,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	r, err := reap.New(
+	r := reap.New(
 		reap.WithDeadline(*deadline),
 		reap.WithDelay(*delay),
 		reap.WithDisableSetuid(*disableSetuid),
@@ -65,10 +65,6 @@ func main() {
 			}
 		}),
 	)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(111)
-	}
 
 	status, err := r.Exec(flag.Args(), os.Environ())
 	if err != nil {

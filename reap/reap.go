@@ -28,6 +28,7 @@ type Reap struct {
 	log           func(error)
 
 	sigch chan os.Signal
+	err   error
 
 	process.Process
 }
@@ -70,12 +71,13 @@ func WithWait(b bool) Option {
 	}
 }
 
-func New(opts ...Option) (*Reap, error) {
+func New(opts ...Option) *Reap {
 	r := &Reap{}
 
 	ps, err := process.New()
 	if err != nil {
-		return r, err
+		r.err = err
+		return r
 	}
 
 	sigch := make(chan os.Signal, 1)
@@ -104,13 +106,17 @@ func New(opts ...Option) (*Reap, error) {
 	}
 
 	if err := unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0); err != nil {
-		return r, fmt.Errorf("prctl(PR_SET_CHILD_SUBREAPER): %w", err)
+		r.err = err
 	}
 
-	return r, nil
+	return r
 }
 
 func (r *Reap) Exec(argv []string, env []string) (int, error) {
+	if r.err != nil {
+		return 111, r.err
+	}
+
 	if r.disableSetuid {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()

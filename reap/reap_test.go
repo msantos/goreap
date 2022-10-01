@@ -23,15 +23,11 @@ var (
 )
 
 func TestNew(t *testing.T) {
-	_, err := reap.New(
+	_ = reap.New(
 		reap.WithLog(func(err error) {
 			t.Log(err)
 		}),
 	)
-	if err != nil {
-		t.Errorf("%v", err)
-		return
-	}
 
 	g := new(errgroup.Group)
 	n := runtime.NumCPU() * 2
@@ -55,16 +51,12 @@ func TestNew(t *testing.T) {
 }
 
 func TestDisableSetuid(t *testing.T) {
-	r, err := reap.New(
+	r := reap.New(
 		reap.WithDisableSetuid(true),
 		reap.WithLog(func(err error) {
 			t.Log(err)
 		}),
 	)
-	if err != nil {
-		t.Errorf("%v", err)
-		return
-	}
 
 	g := new(errgroup.Group)
 	n := runtime.NumCPU() * 2
@@ -127,15 +119,11 @@ func exec(r *reap.Reap, cmd []string, n int) error {
 }
 
 func TestExec(t *testing.T) {
-	r, err := reap.New(
+	r := reap.New(
 		reap.WithLog(func(err error) {
 			t.Log(err)
 		}),
 	)
-	if err != nil {
-		t.Errorf("%v", err)
-		return
-	}
 
 	cmd := []string{
 		"bash", "-c",
@@ -148,17 +136,13 @@ func TestExec(t *testing.T) {
 }
 
 func TestExecDeadline(t *testing.T) {
-	r, err := reap.New(
+	r := reap.New(
 		reap.WithSignal(15),
 		reap.WithDeadline(time.Duration(1)*time.Second),
 		reap.WithLog(func(err error) {
 			t.Log(err)
 		}),
 	)
-	if err != nil {
-		t.Errorf("%v", err)
-		return
-	}
 
 	cmd := []string{
 		"bash", "-c",

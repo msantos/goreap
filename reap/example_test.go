@@ -7,11 +7,7 @@ import (
 )
 
 func ExampleExec() {
-	r, err := reap.New()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	r := reap.New()
 
 	status, err := r.Exec([]string{"env", "-i"}, []string{"FOO=bar"})
 	if err != nil {
