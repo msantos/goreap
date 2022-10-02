@@ -76,7 +76,7 @@ func New(opts ...Option) (Process, error) {
 
 	procfs, err := procfsExists(o.Procfs)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", o.Procfs, err)
+		return nil, err
 	}
 
 	ps := &Ps{
