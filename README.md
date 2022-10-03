@@ -41,7 +41,7 @@ deadline
 disable-setuid
 : disallow setuid (unkillable) subprocesses
 
-interval *duration*
+delay *duration*
 : interval between signals (0 to disable) (default 1s)
 
 signal *int*

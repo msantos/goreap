@@ -74,11 +74,7 @@ func WithWait(b bool) Option {
 func New(opts ...Option) *Reap {
 	r := &Reap{}
 
-	ps, err := process.New()
-	if err != nil {
-		r.err = err
-		return r
-	}
+	ps := process.New()
 
 	sigch := make(chan os.Signal, 1)
 	signal.Notify(sigch)

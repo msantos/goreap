@@ -8,20 +8,22 @@ import (
 	"strings"
 )
 
-// Configuration state for the process using /proc/children.
-//
-// Contains the path to the procfs(5) children file:
+// ProcChildren sets the configuration for generating a process snapshot
+// by reading the procfs(5) children file:
 //
 //	A space-separated list of child tasks of this task.  Each child task
 //	is represented by its TID.
 //
-// If the kernel was compiled with CONFIG_PROC_CHILDREN enabled, the
-// default path is set to /proc/self/task/*/children.
+// The kernel must be compiled with CONFIG_PROC_CHILDREN enabled.
 type ProcChildren struct {
 	*Ps
 }
 
-// Return the list of subprocesses for a PID by reading /proc/children.
+// Children returns the list of subprocesses for a PID by reading
+// /proc/self/task/*/children.
+//
+// If CONFIG_PROC_CHILDREN is not enabled, the error is set to
+// os.ErrNotExist.
 func (ps *ProcChildren) Children() ([]int, error) {
 	pids := make([]int, 0)
 
@@ -30,6 +32,9 @@ func (ps *ProcChildren) Children() ([]int, error) {
 	)
 	if err != nil {
 		return pids, err
+	}
+	if len(paths) == 0 {
+		return pids, os.ErrNotExist
 	}
 
 	for _, v := range paths {

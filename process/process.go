@@ -1,8 +1,8 @@
 package process
 
 import (
-	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,10 +11,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Default mount point for procfs filesystems. The default mountpoint
-// can be changed by setting the PROC environment variable:
-//
-//	export PROC=/tmp/proc
+// Procfs is the default mount point for procfs filesystems. The default
+// mountpoint can be changed by setting the PROC environment variable.
 const Procfs = "/proc"
 
 type Process interface {
@@ -22,27 +20,13 @@ type Process interface {
 	Children() ([]int, error)
 }
 
-// Contents of /proc/stat for a process.
-//
-// Pid is the process ID.
-//
-// PPid is the parent process ID.
+// PID contains the contents of /proc/stat for a process.
 type PID struct {
-	Pid  int
+	// process ID
+	Pid int
+	// parent process ID
 	PPid int
 }
-
-var (
-	// ErrProcNotMounted is returned if /proc is not mounted or is
-	// not a procfs filesystem.
-	ErrProcNotMounted = errors.New("procfs not mounted")
-
-	// ErrParseFailProcStat is returned if /proc/[PID]/stat is
-	// malformed.
-	ErrParseFailProcStat = errors.New("unable to parse stat")
-
-	ErrUnsupportedProcStrategy = errors.New("unsupported proc strategy")
-)
 
 func getenv(s, def string) string {
 	v := os.Getenv(s)
@@ -53,69 +37,72 @@ func getenv(s, def string) string {
 }
 
 type Opt struct {
-	Procfs   string
-	Pid      int
-	Strategy string
+	procfs   string
+	pid      int
+	snapshot string
 }
 
 type Option func(*Opt)
 
-// Create the default configuration state for the process.
-// Returns an error if /proc is not mounted or is not a procfs filesystem.
-func New(opts ...Option) (Process, error) {
-	v := getenv("PROC", Procfs)
-
+// New sets the default configuration state for the process.
+func New(opts ...Option) Process {
 	o := &Opt{
-		Pid:    os.Getpid(),
-		Procfs: v,
+		pid:    os.Getpid(),
+		procfs: getenv("PROC", Procfs),
 	}
 
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	procfs, err := procfsExists(o.Procfs)
-	if err != nil {
-		return nil, err
-	}
-
 	ps := &Ps{
-		pid:    o.Pid,
-		procfs: procfs,
+		pid:    o.pid,
+		procfs: o.procfs,
 	}
 
-	err = procChildrenExists(procfs, o.Pid)
+	if o.snapshot == "ps" {
+		return ps
+	}
 
-	switch o.Strategy {
-	case "children":
-		return &ProcChildren{Ps: ps}, err
-	case "ps":
-		return ps, nil
-	case "", "any":
-		if err == nil {
-			return &ProcChildren{Ps: ps}, nil
+	if err := procChildrenExists(o.procfs, o.pid); err != nil {
+		if o.snapshot == "" {
+			return ps
 		}
-		return ps, nil
 	}
 
-	return nil, ErrUnsupportedProcStrategy
+	return &ProcChildren{Ps: ps}
 }
 
+// WithPid sets the process ID.
 func WithPid(pid int) Option {
 	return func(o *Opt) {
-		o.Pid = pid
+		o.pid = pid
 	}
 }
 
+// WithPid sets the location of the procfs mount point.
 func WithProcfs(procfs string) Option {
 	return func(o *Opt) {
-		o.Procfs = procfs
+		path, err := filepath.Abs(procfs)
+		if err != nil {
+			return
+		}
+		if err := isProcMounted(path); err != nil {
+			return
+		}
+		o.procfs = path
 	}
 }
 
-func WithStrategy(strategy string) Option {
+// WithSnapshot sets the method for discovering subprocesses:
+//
+//  * ps: scan a snapshot of the system process table
+//  * children: read /proc/[PID]/task/*/children
+func WithSnapshot(snapshot string) Option {
 	return func(o *Opt) {
-		o.Strategy = strategy
+		if snapshot == "ps" || snapshot == "children" {
+			o.snapshot = snapshot
+		}
 	}
 }
 
@@ -129,24 +116,13 @@ func procChildrenExists(procfs string, pid int) error {
 	return err
 }
 
-func procfsExists(path string) (string, error) {
-	procfs, err := filepath.Abs(path)
-	if err != nil {
-		return "", fmt.Errorf("%s: %w", path, err)
-	}
-	if err := isProcMounted(procfs); err != nil {
-		return "", fmt.Errorf("%s: %w", procfs, err)
-	}
-	return procfs, nil
-}
-
 func isProcMounted(procfs string) error {
 	var buf syscall.Statfs_t
 	if err := syscall.Statfs(procfs, &buf); err != nil {
 		return err
 	}
 	if buf.Type != unix.PROC_SUPER_MAGIC {
-		return ErrProcNotMounted
+		return fs.ErrNotExist
 	}
 	return nil
 }
@@ -170,24 +146,25 @@ func readProcStat(name string) (PID, error) {
 	var pid int
 
 	if n, err := fmt.Sscanf(stat, "%d ", &pid); err != nil || n != 1 {
-		return PID{}, ErrParseFailProcStat
+		return PID{}, fs.ErrInvalid
 	}
 
 	bracket := strings.LastIndexByte(stat, ')')
 	if bracket == -1 {
-		return PID{}, ErrParseFailProcStat
+		return PID{}, fs.ErrInvalid
 	}
 
 	var state byte
 	var ppid int
 
 	if n, err := fmt.Sscanf(stat[bracket+1:], " %c %d", &state, &ppid); err != nil || n != 2 {
-		return PID{}, ErrParseFailProcStat
+		return PID{}, fs.ErrInvalid
 	}
 	return PID{Pid: pid, PPid: ppid}, nil
 }
 
-// Scan the process table in /proc.
+// Processes returns a snapshot of the sysytem process table by walking
+// through /proc.
 func Processes(procfs string) (p []PID, err error) {
 	matches, err := filepath.Glob(
 		fmt.Sprintf("%s/[0-9]*/stat", procfs),

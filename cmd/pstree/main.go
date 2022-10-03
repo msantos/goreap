@@ -9,14 +9,14 @@ import (
 )
 
 func main() {
-	strategy := "any"
+	snapshot := "any"
 
 	switch len(os.Args) {
 	case 3:
-		strategy = os.Args[2]
+		snapshot = os.Args[2]
 	case 2:
 	default:
-		fmt.Fprintln(os.Stderr, "usage: <pid> [<strategy: any | ps | children>]")
+		fmt.Fprintln(os.Stderr, "usage: <pid> [<snapshot: any | ps | children>]")
 		os.Exit(1)
 	}
 
@@ -26,11 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ps, err := process.New(process.WithPid(pid), process.WithStrategy(strategy))
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	ps := process.New(process.WithPid(pid), process.WithSnapshot(snapshot))
 
 	children, err := ps.Children()
 	if err != nil {

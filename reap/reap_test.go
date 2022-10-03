@@ -101,10 +101,7 @@ func exec(r *reap.Reap, cmd []string, n int) error {
 		}
 	}
 
-	ps, err := process.New()
-	if err != nil {
-		return err
-	}
+	ps := process.New()
 
 	children, err := ps.Children()
 	if err != nil {

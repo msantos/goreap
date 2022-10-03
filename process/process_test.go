@@ -1,7 +1,6 @@
 package process_test
 
 import (
-	"errors"
 	"os"
 	"testing"
 
@@ -9,11 +8,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	ps, err := process.New()
-	if err != nil {
-		t.Errorf("%v", err)
-		return
-	}
+	ps := process.New()
 	if pid := os.Getpid(); pid != ps.Pid() {
 		t.Errorf("pid = %d, want %d", ps.Pid(), pid)
 		return
@@ -22,23 +17,16 @@ func TestNew(t *testing.T) {
 
 func TestNewWithProcfs(t *testing.T) {
 	procfs := "/bin"
-	_, err := process.New(process.WithProcfs(procfs))
-	if err == nil {
-		t.Errorf("non-existent procfs %s", procfs)
-		return
-	}
-	if !errors.Is(err, process.ErrProcNotMounted) {
-		t.Errorf("procfs error = %v, want %v", err, process.ErrProcNotMounted)
+	ps := process.New(process.WithProcfs(procfs))
+	_, err := ps.Children()
+	if err != nil {
+		t.Errorf("procfs failed %s", err)
 		return
 	}
 }
 
 func TestReadProcList(t *testing.T) {
-	ps, err := process.New(process.WithPid(1), process.WithStrategy("ps"))
-	if err != nil {
-		t.Errorf("%v", err)
-		return
-	}
+	ps := process.New(process.WithPid(1), process.WithSnapshot("ps"))
 	pids, err := ps.Children()
 	if err != nil {
 		t.Errorf("%v", err)

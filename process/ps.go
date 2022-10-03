@@ -1,24 +1,20 @@
 package process
 
-// Configuration state for the process when scanning /proc.
+// Ps contains the state for a process when scanning /proc.
 type Ps struct {
 	pid    int
 	procfs string
 }
 
-// Retrieve the process identifier.
+// Pid retrieves the process identifier.
 func (ps *Ps) Pid() int {
 	return ps.pid
 }
 
-// Retrieve the process table.
-func (ps *Ps) Processes() (p []PID, err error) {
-	return Processes(ps.procfs)
-}
-
-// Return the list of subprocesses for a PID by traversing /proc.
+// Children returns a snapshot of the list of subprocesses for a PID by
+// walking /proc.
 func (ps *Ps) Children() ([]int, error) {
-	p, err := ps.Processes()
+	p, err := Processes(ps.procfs)
 	if err != nil {
 		return nil, err
 	}
