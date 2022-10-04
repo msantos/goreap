@@ -6,7 +6,7 @@ import (
 	"github.com/msantos/goreap/reap"
 )
 
-func ExampleExec() {
+func ExampleReap_Exec() {
 	r := reap.New()
 
 	status, err := r.Exec([]string{"env", "-i"}, []string{"FOO=bar"})

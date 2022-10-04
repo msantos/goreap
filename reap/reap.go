@@ -1,3 +1,6 @@
+// Package reap configures the go process as a process supervisor. A
+// process supervisor is the init process for subprocesses and
+// terminates all subprocesses when the foreground process exits.
 package reap
 
 import (
@@ -35,70 +38,80 @@ type Reap struct {
 
 type Option func(*Reap)
 
+// WithDeadline sets a timeout for subprocesses to exit after the
+// foreground process exits. When the deadline is reached, subprocesses
+// are signaled with SIGKILL.
 func WithDeadline(t time.Duration) Option {
 	return func(r *Reap) {
+		if t == 0 {
+			r.deadline = time.Duration(maxInt64)
+			return
+		}
 		r.deadline = t
 	}
 }
 
+// WithDelay waits the specified duration before resending signals
+// after the foreground process exits.
 func WithDelay(t time.Duration) Option {
 	return func(r *Reap) {
+		if t == 0 {
+			r.delay = time.Duration(1)
+			return
+		}
 		r.delay = t
 	}
 }
 
+// WithDisableSetuid disallows unkillable setuid subprocesses.
 func WithDisableSetuid(b bool) Option {
 	return func(r *Reap) {
 		r.disableSetuid = b
 	}
 }
 
+// WithLog specifies a function for logging.
 func WithLog(f func(error)) Option {
 	return func(r *Reap) {
+		if f == nil {
+			r.log = func(error) {}
+			return
+		}
 		r.log = f
 	}
 }
 
+// WithSignal sets the signal sent to subprocesses after the foreground
+// process exits.
 func WithSignal(sig int) Option {
 	return func(r *Reap) {
 		r.sig = syscall.Signal(sig)
 	}
 }
 
+// WithWait disables signalling subprocesses.
 func WithWait(b bool) Option {
 	return func(r *Reap) {
 		r.wait = b
 	}
 }
 
+// New sets the current process to act as a process supervisor.
 func New(opts ...Option) *Reap {
-	r := &Reap{}
-
-	ps := process.New()
-
 	sigch := make(chan os.Signal, 1)
 	signal.Notify(sigch)
 
-	r.sig = syscall.Signal(15)
-	r.delay = time.Duration(1) * time.Second
-	r.deadline = time.Duration(60) * time.Second
-	r.Process = ps
-	r.sigch = sigch
+	r := &Reap{
+		Process:  process.New(),
+		delay:    time.Duration(1) * time.Second,
+		deadline: time.Duration(60) * time.Second,
+		log:      func(error) {},
+		sig:      syscall.Signal(15),
+		sigch:    sigch,
+	}
 
 	for _, opt := range opts {
 		opt(r)
-	}
-
-	if r.log == nil {
-		r.log = func(error) {}
-	}
-
-	if r.deadline == 0 {
-		r.deadline = time.Duration(maxInt64)
-	}
-
-	if r.delay == 0 {
-		r.delay = time.Duration(1)
 	}
 
 	if err := unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0); err != nil {
@@ -108,6 +121,9 @@ func New(opts ...Option) *Reap {
 	return r
 }
 
+// Exec runs and supervises a child process. When the foreground process
+// exits, the supervisor waits for all subprocesses to exit by periodically
+// sending a signal.
 func (r *Reap) Exec(argv []string, env []string) (int, error) {
 	if r.err != nil {
 		return 111, r.err
