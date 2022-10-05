@@ -36,36 +36,25 @@ func getenv(s, def string) string {
 	return v
 }
 
-type Opt struct {
-	procfs   string
-	pid      int
-	snapshot string
-}
-
-type Option func(*Opt)
+type Option func(*Ps)
 
 // New sets the default configuration state for the process.
 func New(opts ...Option) Process {
-	o := &Opt{
+	ps := &Ps{
 		pid:    os.Getpid(),
 		procfs: getenv("PROC", Procfs),
 	}
 
 	for _, opt := range opts {
-		opt(o)
+		opt(ps)
 	}
 
-	ps := &Ps{
-		pid:    o.pid,
-		procfs: o.procfs,
-	}
-
-	if o.snapshot == "ps" {
+	if ps.snapshot == "ps" {
 		return ps
 	}
 
-	if err := procChildrenExists(o.procfs, o.pid); err != nil {
-		if o.snapshot == "" {
+	if err := procChildrenExists(ps.procfs, ps.pid); err != nil {
+		if ps.snapshot == "" {
 			return ps
 		}
 	}
@@ -75,14 +64,14 @@ func New(opts ...Option) Process {
 
 // WithPid sets the process ID.
 func WithPid(pid int) Option {
-	return func(o *Opt) {
-		o.pid = pid
+	return func(ps *Ps) {
+		ps.pid = pid
 	}
 }
 
 // WithPid sets the location of the procfs mount point.
 func WithProcfs(procfs string) Option {
-	return func(o *Opt) {
+	return func(ps *Ps) {
 		path, err := filepath.Abs(procfs)
 		if err != nil {
 			return
@@ -90,7 +79,7 @@ func WithProcfs(procfs string) Option {
 		if err := isProcMounted(path); err != nil {
 			return
 		}
-		o.procfs = path
+		ps.procfs = path
 	}
 }
 
@@ -99,9 +88,9 @@ func WithProcfs(procfs string) Option {
 //  * ps: scan a snapshot of the system process table
 //  * children: read /proc/[PID]/task/*/children
 func WithSnapshot(snapshot string) Option {
-	return func(o *Opt) {
+	return func(ps *Ps) {
 		if snapshot == "ps" || snapshot == "children" {
-			o.snapshot = snapshot
+			ps.snapshot = snapshot
 		}
 	}
 }

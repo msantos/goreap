@@ -2,8 +2,9 @@ package process
 
 // Ps contains the state for a process when scanning /proc.
 type Ps struct {
-	pid    int
-	procfs string
+	pid      int
+	procfs   string
+	snapshot string
 }
 
 // Pid retrieves the process identifier.

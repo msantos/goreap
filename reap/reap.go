@@ -114,9 +114,7 @@ func New(opts ...Option) *Reap {
 		opt(r)
 	}
 
-	if err := unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0); err != nil {
-		r.err = err
-	}
+	r.err = unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0)
 
 	return r
 }
