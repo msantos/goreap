@@ -37,3 +37,16 @@ func TestReadProcList(t *testing.T) {
 		return
 	}
 }
+
+func TestSnapshot(t *testing.T) {
+	ps := process.New()
+	pids, err := ps.Snapshot()
+	if err != nil {
+		t.Errorf("%v", err)
+		return
+	}
+	if len(pids) == 0 {
+		t.Errorf("process table is empty = %v", ps)
+		return
+	}
+}

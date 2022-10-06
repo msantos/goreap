@@ -1,3 +1,5 @@
+// Package process enumerates the process table for all processes or
+// descendents of a process.
 package process
 
 import (
@@ -18,6 +20,7 @@ const Procfs = "/proc"
 type Process interface {
 	Pid() int
 	Children() ([]int, error)
+	Snapshot() ([]PID, error)
 }
 
 // PID contains the contents of /proc/stat for a process.
@@ -85,8 +88,8 @@ func WithProcfs(procfs string) Option {
 
 // WithSnapshot sets the method for discovering subprocesses:
 //
-//  * ps: scan a snapshot of the system process table
-//  * children: read /proc/[PID]/task/*/children
+//   - ps: scan a snapshot of the system process table
+//   - children: read /proc/[PID]/task/*/children
 func WithSnapshot(snapshot string) Option {
 	return func(ps *Ps) {
 		if snapshot == "ps" || snapshot == "children" {
@@ -152,9 +155,9 @@ func readProcStat(name string) (PID, error) {
 	return PID{Pid: pid, PPid: ppid}, nil
 }
 
-// Processes returns a snapshot of the sysytem process table by walking
+// Snapshot returns a snapshot of the system process table by walking
 // through /proc.
-func Processes(procfs string) (p []PID, err error) {
+func Snapshot(procfs string) (p []PID, err error) {
 	matches, err := filepath.Glob(
 		fmt.Sprintf("%s/[0-9]*/stat", procfs),
 	)

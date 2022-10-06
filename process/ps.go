@@ -12,10 +12,15 @@ func (ps *Ps) Pid() int {
 	return ps.pid
 }
 
+// Snapshot returns a snapshot of the system process table.
+func (ps *Ps) Snapshot() ([]PID, error) {
+	return Snapshot(ps.procfs)
+}
+
 // Children returns a snapshot of the list of subprocesses for a PID by
 // walking /proc.
 func (ps *Ps) Children() ([]int, error) {
-	p, err := Processes(ps.procfs)
+	p, err := ps.Snapshot()
 	if err != nil {
 		return nil, err
 	}
