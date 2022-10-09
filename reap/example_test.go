@@ -6,10 +6,10 @@ import (
 	"github.com/msantos/goreap/reap"
 )
 
-func ExampleReap_Exec() {
+func ExampleReap_Supervise() {
 	r := reap.New()
 
-	status, err := r.Exec([]string{"env", "-i"}, []string{"FOO=bar"})
+	status, err := r.Supervise([]string{"env", "-i"}, []string{"FOO=bar"})
 	if err != nil {
 		fmt.Println(err)
 		return

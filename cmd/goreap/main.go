@@ -66,7 +66,7 @@ func main() {
 		}),
 	)
 
-	status, err := r.Exec(flag.Args(), os.Environ())
+	status, err := r.Supervise(flag.Args(), os.Environ())
 	if err != nil {
 		fmt.Printf("%s: %s\n", flag.Arg(0), err)
 	}

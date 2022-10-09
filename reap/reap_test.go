@@ -63,7 +63,7 @@ func TestDisableSetuid(t *testing.T) {
 
 	for i := n; i > 0; i-- {
 		g.Go(func() error {
-			status, err := r.Exec([]string{"sh", "-c", "sudo -h 2>/dev/null"}, os.Environ())
+			status, err := r.Supervise([]string{"sh", "-c", "sudo -h 2>/dev/null"}, os.Environ())
 			if err != nil {
 				if errors.Is(err, syscall.ECHILD) {
 					return nil
@@ -87,7 +87,7 @@ func exec(r *reap.Reap, cmd []string, n int) error {
 
 	for i := n; i > 0; i-- {
 		g.Go(func() error {
-			_, err := r.Exec(cmd, os.Environ())
+			_, err := r.Supervise(cmd, os.Environ())
 			if err != nil {
 				return err
 			}
@@ -115,7 +115,7 @@ func exec(r *reap.Reap, cmd []string, n int) error {
 	return nil
 }
 
-func TestExec(t *testing.T) {
+func TestSupervise(t *testing.T) {
 	r := reap.New(
 		reap.WithLog(func(err error) {
 			t.Log(err)
@@ -132,7 +132,7 @@ func TestExec(t *testing.T) {
 	}
 }
 
-func TestExecDeadline(t *testing.T) {
+func TestSuperviseDeadline(t *testing.T) {
 	r := reap.New(
 		reap.WithSignal(15),
 		reap.WithDeadline(time.Duration(1)*time.Second),

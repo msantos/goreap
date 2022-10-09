@@ -119,9 +119,19 @@ func New(opts ...Option) *Reap {
 	return r
 }
 
-// Exec runs and supervises a child process. When the foreground process
-// exits, the supervisor waits for all subprocesses to exit by periodically
-// sending a signal.
+// Supervise creates a subprocess, terminating all subprocesses when
+// the foreground process exits.
+func (r *Reap) Supervise(argv []string, env []string) (int, error) {
+	status, err := r.Exec(argv, env)
+
+	if err := r.Reap(); err != nil {
+		return 111, err
+	}
+
+	return status, err
+}
+
+// Exec forks and executes a subprocess.
 func (r *Reap) Exec(argv []string, env []string) (int, error) {
 	if r.err != nil {
 		return 111, r.err
@@ -136,18 +146,10 @@ func (r *Reap) Exec(argv []string, env []string) (int, error) {
 		}
 	}
 
-	exitStatus, err := r.execv(argv[0], argv[1:], env)
-	if err != nil {
-		return exitStatus, err
-	}
-
-	if err := r.reap(); err != nil {
-		return 111, err
-	}
-
-	return exitStatus, nil
+	return r.execv(argv[0], argv[1:], env)
 }
 
+// Reap delivers a signal to all descenants of this process.
 func (r *Reap) kill(pid int, sig syscall.Signal) {
 	err := syscall.Kill(pid, sig)
 	if err == nil || errors.Is(err, syscall.ESRCH) {
@@ -169,7 +171,7 @@ func (r *Reap) signalWith(sig syscall.Signal) {
 	}
 }
 
-func (r *Reap) reap() error {
+func (r *Reap) Reap() error {
 	exitch := make(chan struct{})
 	defer close(exitch)
 
