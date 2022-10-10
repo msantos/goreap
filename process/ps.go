@@ -20,6 +20,10 @@ func (ps *Ps) Snapshot() ([]PID, error) {
 // Children returns a snapshot of the list of subprocesses for a PID by
 // walking /proc.
 func (ps *Ps) Children() ([]int, error) {
+	if !exists(ps.procfs, ps.pid) {
+		return nil, ErrSearch
+	}
+
 	p, err := ps.Snapshot()
 	if err != nil {
 		return nil, err

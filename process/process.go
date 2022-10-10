@@ -15,7 +15,15 @@ import (
 
 // Procfs is the default mount point for procfs filesystems. The default
 // mountpoint can be changed by setting the PROC environment variable.
-const Procfs = "/proc"
+const (
+	Procfs    = "/proc"
+	ErrSearch = unix.ESRCH
+)
+
+var (
+	ErrInvalid  = fs.ErrInvalid
+	ErrNotExist = fs.ErrNotExist
+)
 
 type Process interface {
 	Pid() int
@@ -114,7 +122,7 @@ func isProcMounted(procfs string) error {
 		return err
 	}
 	if buf.Type != unix.PROC_SUPER_MAGIC {
-		return fs.ErrNotExist
+		return ErrNotExist
 	}
 	return nil
 }
@@ -138,21 +146,28 @@ func readProcStat(name string) (PID, error) {
 	var pid int
 
 	if n, err := fmt.Sscanf(stat, "%d ", &pid); err != nil || n != 1 {
-		return PID{}, fs.ErrInvalid
+		return PID{}, ErrInvalid
 	}
 
 	bracket := strings.LastIndexByte(stat, ')')
 	if bracket == -1 {
-		return PID{}, fs.ErrInvalid
+		return PID{}, ErrInvalid
 	}
 
 	var state byte
 	var ppid int
 
 	if n, err := fmt.Sscanf(stat[bracket+1:], " %c %d", &state, &ppid); err != nil || n != 2 {
-		return PID{}, fs.ErrInvalid
+		return PID{}, ErrInvalid
 	}
 	return PID{Pid: pid, PPid: ppid}, nil
+}
+
+func exists(procfs string, pid int) bool {
+	if _, err := os.Stat(fmt.Sprintf("%s/%d", procfs, pid)); err != nil {
+		return false
+	}
+	return true
 }
 
 // Snapshot returns a snapshot of the system process table by walking

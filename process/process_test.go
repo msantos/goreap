@@ -50,3 +50,17 @@ func TestSnapshot(t *testing.T) {
 		return
 	}
 }
+
+func TestErrSearch(t *testing.T) {
+	pid := 123456
+	ps := process.New(process.WithPid(pid))
+	pids, err := ps.Children()
+	if err == nil {
+		t.Errorf("found: %d: %v", pid, pids)
+		return
+	}
+	if err != process.ErrSearch {
+		t.Errorf("%v", err)
+		return
+	}
+}

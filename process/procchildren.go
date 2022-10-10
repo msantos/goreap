@@ -23,8 +23,12 @@ type ProcChildren struct {
 // /proc/self/task/*/children.
 //
 // If CONFIG_PROC_CHILDREN is not enabled, the error is set to
-// os.ErrNotExist.
+// ErrNotExist.
 func (ps *ProcChildren) Children() ([]int, error) {
+	if !exists(ps.procfs, ps.pid) {
+		return nil, ErrSearch
+	}
+
 	pids := make([]int, 0)
 
 	paths, err := filepath.Glob(
@@ -34,7 +38,7 @@ func (ps *ProcChildren) Children() ([]int, error) {
 		return pids, err
 	}
 	if len(paths) == 0 {
-		return pids, os.ErrNotExist
+		return pids, ErrNotExist
 	}
 
 	for _, v := range paths {
