@@ -26,7 +26,10 @@ func TestNewWithProcfs(t *testing.T) {
 }
 
 func TestReadProcList(t *testing.T) {
-	ps := process.New(process.WithPid(1), process.WithSnapshot("ps"))
+	ps := process.New(
+		process.WithPid(1),
+		process.WithSnapshot(process.SnapshotPs),
+	)
 	pids, err := ps.Children()
 	if err != nil {
 		t.Errorf("%v", err)

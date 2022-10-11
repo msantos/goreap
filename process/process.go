@@ -94,13 +94,10 @@ func WithProcfs(procfs string) Option {
 	}
 }
 
-// WithSnapshot sets the method for discovering subprocesses:
-//
-//   - ps: scan a snapshot of the system process table
-//   - children: read /proc/[PID]/task/*/children
-func WithSnapshot(snapshot string) Option {
+// WithSnapshot sets the method for discovering subprocesses.
+func WithSnapshot(snapshot SnapshotStrategy) Option {
 	return func(ps *Ps) {
-		if snapshot == "ps" || snapshot == "children" {
+		if snapshot == SnapshotPs || snapshot == SnapshotChildren {
 			ps.snapshot = snapshot
 		}
 	}

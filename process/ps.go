@@ -1,10 +1,18 @@
 package process
 
+type SnapshotStrategy string
+
+const (
+	SnapshotAny      SnapshotStrategy = ""
+	SnapshotPs       SnapshotStrategy = "ps"
+	SnapshotChildren SnapshotStrategy = "children"
+)
+
 // Ps contains the state for a process when scanning /proc.
 type Ps struct {
 	pid      int
 	procfs   string
-	snapshot string
+	snapshot SnapshotStrategy
 }
 
 // Pid retrieves the process identifier.
