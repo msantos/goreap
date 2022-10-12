@@ -149,7 +149,6 @@ func (r *Reap) Exec(argv []string, env []string) (int, error) {
 	return r.execv(argv[0], argv[1:], env)
 }
 
-// Reap delivers a signal to all descenants of this process.
 func (r *Reap) kill(pid int, sig syscall.Signal) {
 	err := syscall.Kill(pid, sig)
 	if err == nil || errors.Is(err, syscall.ESRCH) {
@@ -171,6 +170,7 @@ func (r *Reap) signalWith(sig syscall.Signal) {
 	}
 }
 
+// Reap delivers a signal to all descendants of this process.
 func (r *Reap) Reap() error {
 	exitch := make(chan struct{})
 	defer close(exitch)

@@ -13,16 +13,18 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Procfs is the default mount point for procfs filesystems. The default
-// mountpoint can be changed by setting the PROC environment variable.
 const (
-	Procfs    = "/proc"
+	// Procfs is the default mount point for procfs filesystems. The default
+	// mountpoint can be changed by setting the PROC environment variable.
+	Procfs = "/proc"
+
+	// No such process
 	ErrSearch = unix.ESRCH
 )
 
 var (
-	ErrInvalid  = fs.ErrInvalid
-	ErrNotExist = fs.ErrNotExist
+	ErrInvalid  = fs.ErrInvalid  // "invalid argument"
+	ErrNotExist = fs.ErrNotExist // "file does not exist"
 )
 
 type Process interface {
