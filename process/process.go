@@ -1,5 +1,5 @@
 // Package process enumerates the process table for all processes or
-// descendents of a process.
+// descendants of a process.
 package process
 
 import (
@@ -18,8 +18,7 @@ const (
 	// mountpoint can be changed by setting the PROC environment variable.
 	Procfs = "/proc"
 
-	// No such process
-	ErrSearch = unix.ESRCH
+	ErrSearch = unix.ESRCH // No such process
 )
 
 var (
@@ -35,10 +34,8 @@ type Process interface {
 
 // PID contains the contents of /proc/stat for a process.
 type PID struct {
-	// process ID
-	Pid int
-	// parent process ID
-	PPid int
+	Pid  int // process ID
+	PPid int // parent process ID
 }
 
 func getenv(s, def string) string {

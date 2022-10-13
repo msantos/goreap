@@ -23,5 +23,5 @@ func ExamplePs_Snapshot() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(pids)
+	fmt.Printf("%+v\n", pids)
 }

@@ -36,10 +36,10 @@ func (ps *Ps) Children() ([]int, error) {
 	if err != nil {
 		return nil, err
 	}
-	return descendents(p, ps.pid), nil
+	return descendants(p, ps.pid), nil
 }
 
-func descendents(pids []PID, pid int) []int {
+func descendants(pids []PID, pid int) []int {
 	children := make(map[int]struct{})
 	walk(pids, pid, children)
 	cld := make([]int, 0, len(children))
