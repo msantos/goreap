@@ -16,7 +16,7 @@ func main() {
 		snapshot = os.Args[2]
 	case 2:
 	default:
-		fmt.Fprintln(os.Stderr, "usage: <pid> [<snapshot: %s | %s>]",
+		fmt.Fprintf(os.Stderr, "usage: <pid> [<snapshot: %s | %s>]",
 			process.SnapshotPs, process.SnapshotChildren,
 		)
 		os.Exit(1)

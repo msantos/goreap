@@ -1,6 +1,7 @@
 package process_test
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -62,7 +63,7 @@ func TestErrSearch(t *testing.T) {
 		t.Errorf("found: %d: %v", pid, pids)
 		return
 	}
-	if err != process.ErrSearch {
+	if errors.Is(err, process.ErrSearch) {
 		t.Errorf("%v", err)
 		return
 	}
