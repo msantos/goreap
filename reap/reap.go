@@ -170,40 +170,42 @@ func (r *Reap) signalWith(sig syscall.Signal) {
 	}
 }
 
+func (r *Reap) reaper(exitch <-chan struct{}) {
+	t := time.NewTimer(r.deadline)
+	tick := time.NewTicker(r.delay)
+
+	sig := r.sig
+
+	if !r.wait {
+		r.signalWith(sig)
+	}
+
+	for {
+		select {
+		case <-exitch:
+			return
+		case <-t.C:
+			sig = syscall.SIGKILL
+		case sig := <-r.sigch:
+			switch sig.(syscall.Signal) {
+			case syscall.SIGCHLD, syscall.SIGIO, syscall.SIGPIPE, syscall.SIGURG:
+			default:
+				r.signalWith(sig.(syscall.Signal))
+			}
+		case <-tick.C:
+			if !r.wait {
+				r.signalWith(sig)
+			}
+		}
+	}
+}
+
 // Reap delivers a signal to all descendants of this process.
 func (r *Reap) Reap() error {
 	exitch := make(chan struct{})
 	defer close(exitch)
 
-	go func() {
-		t := time.NewTimer(r.deadline)
-		tick := time.NewTicker(r.delay)
-
-		sig := r.sig
-
-		if !r.wait {
-			r.signalWith(sig)
-		}
-
-		for {
-			select {
-			case <-exitch:
-				return
-			case <-t.C:
-				sig = syscall.SIGKILL
-			case sig := <-r.sigch:
-				switch sig.(syscall.Signal) {
-				case syscall.SIGCHLD, syscall.SIGIO, syscall.SIGPIPE, syscall.SIGURG:
-				default:
-					r.signalWith(sig.(syscall.Signal))
-				}
-			case <-tick.C:
-				if !r.wait {
-					r.signalWith(sig)
-				}
-			}
-		}
-	}()
+	go r.reaper(exitch)
 
 	for {
 		_, err := syscall.Wait4(-1, nil, 0, nil)
