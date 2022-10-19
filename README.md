@@ -1,5 +1,7 @@
 # SYNOPSIS
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/msantos/goreap.svg)](https://pkg.go.dev/github.com/msantos/goreap)
+
 goreap [*options*] <command> <...>
 
 # DESCRIPTION
