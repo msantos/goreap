@@ -174,28 +174,29 @@ func (r *Reap) reaper(exitch <-chan struct{}) {
 	t := time.NewTimer(r.deadline)
 	tick := time.NewTicker(r.delay)
 
-	sig := r.sig
-
-	if !r.wait {
-		r.signalWith(sig)
+	signal := func(sig syscall.Signal) {
+		if r.wait {
+			return
+		}
+		r.signalWith(r.sig)
 	}
+
+	signal(r.sig)
 
 	for {
 		select {
 		case <-exitch:
 			return
 		case <-t.C:
-			sig = syscall.SIGKILL
+			r.sig = syscall.SIGKILL
 		case sig := <-r.sigch:
-			switch sig.(syscall.Signal) {
+			switch sig {
 			case syscall.SIGCHLD, syscall.SIGIO, syscall.SIGPIPE, syscall.SIGURG:
 			default:
 				r.signalWith(sig.(syscall.Signal))
 			}
 		case <-tick.C:
-			if !r.wait {
-				r.signalWith(sig)
-			}
+			signal(r.sig)
 		}
 	}
 }
@@ -244,7 +245,7 @@ func (r *Reap) execv(command string, args []string, env []string) (int, error) {
 	for {
 		select {
 		case sig := <-r.sigch:
-			switch sig.(syscall.Signal) {
+			switch sig {
 			case syscall.SIGCHLD, syscall.SIGIO, syscall.SIGPIPE, syscall.SIGURG:
 			default:
 				r.signalWith(sig.(syscall.Signal))
