@@ -240,6 +240,10 @@ func (r *Reap) execv(command string, args []string, env []string) (int, error) {
 		waitch <- cmd.Wait()
 	}()
 
+	return r.waitpid(waitch)
+}
+
+func (r *Reap) waitpid(waitch <-chan error) (int, error) {
 	var exitError *exec.ExitError
 
 	for {
