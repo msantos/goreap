@@ -98,17 +98,16 @@ func WithWait(b bool) Option {
 
 // New sets the current process to act as a process supervisor.
 func New(opts ...Option) *Reap {
-	sigch := make(chan os.Signal, 1)
-	signal.Notify(sigch)
-
 	r := &Reap{
 		Process:  process.New(),
 		delay:    time.Duration(1) * time.Second,
 		deadline: time.Duration(60) * time.Second,
 		log:      func(error) {},
 		sig:      syscall.Signal(15),
-		sigch:    sigch,
+		sigch:    make(chan os.Signal, 1),
 	}
+
+	signal.Notify(r.sigch)
 
 	for _, opt := range opts {
 		opt(r)
