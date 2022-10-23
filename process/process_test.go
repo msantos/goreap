@@ -63,7 +63,7 @@ func TestErrSearch(t *testing.T) {
 		t.Errorf("found: %d: %v", pid, pids)
 		return
 	}
-	if errors.Is(err, process.ErrSearch) {
+	if !errors.Is(err, process.ErrSearch) {
 		t.Errorf("%v", err)
 		return
 	}
