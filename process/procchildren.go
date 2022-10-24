@@ -32,7 +32,7 @@ func (ps *ProcChildren) Children() ([]int, error) {
 	pids := make([]int, 0)
 
 	paths, err := filepath.Glob(
-		fmt.Sprintf("%s/self/task/*/children", ps.procfs),
+		fmt.Sprintf("%s/%d/task/*/children", ps.procfs, ps.pid),
 	)
 	if err != nil {
 		return pids, err
