@@ -63,7 +63,7 @@ func New(opts ...Option) Process {
 		return ps
 	}
 
-	if err := procChildrenExists(ps.procfs, ps.pid); err != nil {
+	if !procChildrenExists(ps.procfs, ps.pid) {
 		if ps.snapshot == "" {
 			return ps
 		}
@@ -86,10 +86,9 @@ func WithProcfs(procfs string) Option {
 		if err != nil {
 			return
 		}
-		if err := isProcMounted(path); err != nil {
-			return
+		if isProcMounted(path) {
+			ps.procfs = path
 		}
-		ps.procfs = path
 	}
 }
 
@@ -102,25 +101,22 @@ func WithSnapshot(snapshot SnapshotStrategy) Option {
 	}
 }
 
-func procChildrenExists(procfs string, pid int) error {
+func procChildrenExists(procfs string, pid int) bool {
 	children := fmt.Sprintf(
 		"%s/self/task/%d/children",
 		procfs,
 		pid,
 	)
 	_, err := os.Stat(children)
-	return err
+	return err == nil
 }
 
-func isProcMounted(procfs string) error {
+func isProcMounted(procfs string) bool {
 	var buf syscall.Statfs_t
 	if err := syscall.Statfs(procfs, &buf); err != nil {
-		return err
+		return false
 	}
-	if buf.Type != unix.PROC_SUPER_MAGIC {
-		return ErrNotExist
-	}
-	return nil
+	return buf.Type == unix.PROC_SUPER_MAGIC
 }
 
 func readProcStat(name string) (PID, error) {
@@ -160,10 +156,8 @@ func readProcStat(name string) (PID, error) {
 }
 
 func exists(procfs string, pid int) bool {
-	if _, err := os.Stat(fmt.Sprintf("%s/%d", procfs, pid)); err != nil {
-		return false
-	}
-	return true
+	_, err := os.Stat(fmt.Sprintf("%s/%d", procfs, pid))
+	return err == nil
 }
 
 // Snapshot returns a snapshot of the system process table by walking
