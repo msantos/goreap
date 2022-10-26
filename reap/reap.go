@@ -173,14 +173,14 @@ func (r *Reap) reaper(exitch <-chan struct{}) {
 	t := time.NewTimer(r.deadline)
 	tick := time.NewTicker(r.delay)
 
-	signal := func(sig syscall.Signal) {
+	signal := func() {
 		if r.wait {
 			return
 		}
 		r.signalWith(r.sig)
 	}
 
-	signal(r.sig)
+	signal()
 
 	for {
 		select {
@@ -195,7 +195,7 @@ func (r *Reap) reaper(exitch <-chan struct{}) {
 				r.signalWith(sig.(syscall.Signal))
 			}
 		case <-tick.C:
-			signal(r.sig)
+			signal()
 		}
 	}
 }
