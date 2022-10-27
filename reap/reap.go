@@ -113,7 +113,9 @@ func New(opts ...Option) *Reap {
 		opt(r)
 	}
 
-	r.err = unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0)
+	if err := unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0); err != nil {
+		r.err = fmt.Errorf("PR_SET_CHILD_SUBREAPER: %w", err)
+	}
 
 	return r
 }
@@ -202,6 +204,10 @@ func (r *Reap) reaper(exitch <-chan struct{}) {
 
 // Reap delivers a signal to all descendants of this process.
 func (r *Reap) Reap() error {
+	if r.err != nil {
+		r.log(r.err)
+	}
+
 	exitch := make(chan struct{})
 	defer close(exitch)
 
