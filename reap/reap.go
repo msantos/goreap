@@ -31,9 +31,12 @@ type Reap struct {
 	log           func(error)
 
 	sigch chan os.Signal
-	err   error
 
 	process.Process
+}
+
+func init() {
+	_ = unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0)
 }
 
 type Option func(*Reap)
@@ -113,10 +116,6 @@ func New(opts ...Option) *Reap {
 		opt(r)
 	}
 
-	if err := unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0); err != nil {
-		r.err = fmt.Errorf("PR_SET_CHILD_SUBREAPER: %w", err)
-	}
-
 	return r
 }
 
@@ -134,10 +133,6 @@ func (r *Reap) Supervise(argv []string, env []string) (int, error) {
 
 // Exec forks and executes a subprocess.
 func (r *Reap) Exec(argv []string, env []string) (int, error) {
-	if r.err != nil {
-		return 111, r.err
-	}
-
 	if r.disableSetuid {
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
@@ -204,10 +199,6 @@ func (r *Reap) reaper(exitch <-chan struct{}) {
 
 // Reap delivers a signal to all descendants of this process.
 func (r *Reap) Reap() error {
-	if r.err != nil {
-		r.log(r.err)
-	}
-
 	exitch := make(chan struct{})
 	defer close(exitch)
 
