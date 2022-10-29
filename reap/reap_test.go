@@ -150,3 +150,9 @@ func TestSuperviseDeadline(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 }
+
+func TestSubReaper(t *testing.T) {
+	if !reap.SubReaper() {
+		t.Errorf("not a subreaper")
+	}
+}
