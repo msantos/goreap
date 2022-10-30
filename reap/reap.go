@@ -12,9 +12,9 @@ import (
 	"runtime"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/msantos/goreap/process"
+	"github.com/msantos/goreap/subreaper"
 
 	"golang.org/x/sys/unix"
 )
@@ -37,18 +37,13 @@ type Reap struct {
 }
 
 func init() {
-	_ = unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0)
+	_ = subreaper.Set()
 }
 
 // SubReaper indicates whether the current process is the init process
 // for descendant processes.
 func SubReaper() bool {
-	var arg2 int
-
-	err := unix.Prctl(unix.PR_GET_CHILD_SUBREAPER,
-		uintptr(unsafe.Pointer(&arg2)), 0, 0, 0)
-
-	return err == nil && arg2 == 1
+	return subreaper.Get()
 }
 
 type Option func(*Reap)
