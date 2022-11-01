@@ -1,5 +1,4 @@
-//go:build !linux
-// +build !linux
+//go:build !linux && !freebsd
 
 // Package subreaper sets the process as the init for descendant
 // processes.
