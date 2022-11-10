@@ -24,7 +24,7 @@ const (
 
 // Set configures the process as a subreaper.
 func Set() error {
-	_, _, err := syscall.Syscall6(
+	_, _, errno := syscall.Syscall6(
 		unix.SYS_PROCCTL,  // trap
 		P_PID,             // idtype
 		0,                 // id
@@ -33,8 +33,8 @@ func Set() error {
 		0,
 		0,
 	)
-	if err != 0 {
-		return err
+	if errno != 0 {
+		return errno
 	}
 	return nil
 }
@@ -42,11 +42,11 @@ func Set() error {
 // Get indicates whether the current process is the init process
 // for descendant processes.
 func Get() bool {
-	status, err := GetStatus()
+	status, err := Status()
 	return err == nil && (status.Flags&REAPER_STATUS_OWNED != 0)
 }
 
-type Status struct {
+type ReapStatus struct {
 	Flags       uint
 	Children    uint
 	Descendants uint
@@ -55,10 +55,10 @@ type Status struct {
 	pad0        [15]uint
 }
 
-func GetStatus() (*Status, error) {
-	status := &Status{}
+func Status() (*ReapStatus, error) {
+	status := &ReapStatus{}
 
-	_, _, err := syscall.Syscall6(
+	_, _, errno := syscall.Syscall6(
 		unix.SYS_PROCCTL,                // trap
 		P_PID,                           // idtype
 		0,                               // id
@@ -68,8 +68,8 @@ func GetStatus() (*Status, error) {
 		0,
 	)
 
-	if err != 0 {
-		return status, err
+	if errno != 0 {
+		return status, errno
 	}
 	return status, nil
 }
