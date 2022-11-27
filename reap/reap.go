@@ -129,6 +129,9 @@ func New(opts ...Option) *Reap {
 // Supervise creates a subprocess, terminating all subprocesses when
 // the foreground process exits.
 func (r *Reap) Supervise(argv []string, env []string) (int, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	status, err := r.Exec(argv, env)
 
 	if err := r.Reap(); err != nil {
