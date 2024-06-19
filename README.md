@@ -14,7 +14,7 @@ See [reap](https://github.com/leahneukirchen/reap).
 
 ```
 cd cmd/goreap
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w"
+CGO_ENABLED=0 go build -trimpath -ldflags "-w"
 ```
 
 # EXAMPLES
