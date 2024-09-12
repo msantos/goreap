@@ -13,8 +13,7 @@ See [reap](https://github.com/leahneukirchen/reap).
 # BUILDING
 
 ```
-cd cmd/goreap
-CGO_ENABLED=0 go build -trimpath -ldflags "-w"
+CGO_ENABLED=0 go build -trimpath -ldflags "-w" ./cmd/goreap
 ```
 
 # EXAMPLES
