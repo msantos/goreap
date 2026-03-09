@@ -12,13 +12,13 @@ See [reap](https://github.com/leahneukirchen/reap).
 
 # BUILDING
 
-```
+```bash
 CGO_ENABLED=0 go build -trimpath -ldflags "-w" ./cmd/goreap
 ```
 
 # EXAMPLES
 
-```
+```bash
 goreap cat
 
 goreap sh -c "sleep inf & sleep inf & sleep 5"
@@ -60,6 +60,6 @@ wait
 
 # TESTS
 
-```
+```bash
 bats test
 ```
