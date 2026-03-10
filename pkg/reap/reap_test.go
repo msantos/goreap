@@ -10,8 +10,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/msantos/goreap/process"
-	"github.com/msantos/goreap/reap"
+	"github.com/msantos/goreap/pkg/process"
+	"github.com/msantos/goreap/pkg/reap"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sys/unix"
 )

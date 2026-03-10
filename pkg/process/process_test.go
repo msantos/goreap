@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/msantos/goreap/process"
+	"github.com/msantos/goreap/pkg/process"
 )
 
 func TestNew(t *testing.T) {

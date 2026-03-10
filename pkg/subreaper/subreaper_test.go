@@ -3,7 +3,7 @@ package subreaper_test
 import (
 	"fmt"
 
-	"github.com/msantos/goreap/subreaper"
+	"github.com/msantos/goreap/pkg/subreaper"
 )
 
 func init() {

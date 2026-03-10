@@ -3,7 +3,7 @@ package reap_test
 import (
 	"fmt"
 
-	"github.com/msantos/goreap/reap"
+	"github.com/msantos/goreap/pkg/reap"
 )
 
 func ExampleReap_Supervise() {

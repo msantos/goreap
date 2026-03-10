@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/msantos/goreap/process"
+	"github.com/msantos/goreap/pkg/process"
 )
 
 func main() {

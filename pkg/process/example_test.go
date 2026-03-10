@@ -3,7 +3,7 @@ package process_test
 import (
 	"fmt"
 
-	"github.com/msantos/goreap/process"
+	"github.com/msantos/goreap/pkg/process"
 )
 
 func ExamplePs_Children() {
