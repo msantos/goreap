@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/msantos/goreap/pkg/process"
-	"github.com/msantos/goreap/pkg/subreaper"
+	"go.iscode.ca/goreap/pkg/process"
+	"go.iscode.ca/goreap/pkg/subreaper"
 
 	"golang.org/x/sys/unix"
 )

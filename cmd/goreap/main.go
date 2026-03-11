@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/msantos/goreap/pkg/reap"
+	"go.iscode.ca/goreap/pkg/reap"
 )
 
 var version = "0.11.0"

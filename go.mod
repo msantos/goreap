@@ -1,4 +1,4 @@
-module github.com/msantos/goreap
+module go.iscode.ca/goreap
 
 go 1.25.0
 

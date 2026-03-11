@@ -1,6 +1,6 @@
 # SYNOPSIS
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/msantos/goreap.svg)](https://pkg.go.dev/github.com/msantos/goreap)
+[![Go Reference](https://pkg.go.dev/badge/go.iscode.ca/goreap.svg)](https://pkg.go.dev/github.com/msantos/goreap)
 
 goreap [*options*] <command> <...>
 
