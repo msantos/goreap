@@ -13,6 +13,12 @@ See [reap](https://github.com/leahneukirchen/reap).
 # BUILDING
 
 ```bash
+go install go.iscode.ca/goreap/cmd/goreap@latest
+```
+
+To build a reproducible executable from the git repository:
+
+```bash
 CGO_ENABLED=0 go build -trimpath -ldflags "-w" ./cmd/goreap
 ```
 
