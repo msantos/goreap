@@ -10,7 +10,7 @@ import (
 	"go.iscode.ca/goreap/pkg/reap"
 )
 
-var version = "0.11.0"
+var version = "0.12.0"
 
 func usage() {
 	fmt.Fprintf(os.Stderr, `%s v%s
